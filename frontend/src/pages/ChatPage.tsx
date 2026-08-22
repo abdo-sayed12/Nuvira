@@ -290,7 +290,6 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
     setError(undefined); 
     setLoading(true);
 
-    // إضافة الملف المرفوع لرسالة المستخدم عشان يفضل ظاهر في الشات
     setMessages((current) => [...current, { 
       id: crypto.randomUUID(), 
       role: "user", 
@@ -299,7 +298,7 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
     }]);
 
     try {
-      const reply = await api.chat(queryText, conversationId);
+      const reply = await api.chat(queryText, conversationId, fileToSend?.base64);
       setConversationId(reply.conversation_id);
       setMessages((current) => [...current, { id: crypto.randomUUID(), role: "assistant", body: reply.answer, reply }]);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Error connecting to server."); }
@@ -438,7 +437,6 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
                 
                 <div dir={isArabic(message.body) ? "rtl" : "ltr"} className={message.role === "user" ? "rounded-3xl rounded-br-sm rtl:rounded-br-3xl rtl:rounded-bl-sm bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 text-sm leading-relaxed text-white font-medium shadow-md shadow-teal-900/10 space-y-2" : "rounded-3xl rounded-bl-sm rtl:rounded-bl-3xl rtl:rounded-br-sm border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 px-6 py-6 text-sm leading-relaxed text-slate-800 dark:text-slate-100 shadow-sm"}>
                   
-                  {/* عرض الملف المرفوع داخل فقاعة رسالة المستخدم لكي لا يختفي أبداً */}
                   {message.fileName && (
                     <div className="inline-flex items-center gap-2 bg-white/20 dark:bg-black/20 px-3 py-1.5 rounded-xl text-xs font-bold text-white mb-2 border border-white/20">
                       <FileText size={14} />
