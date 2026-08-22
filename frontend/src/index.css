@@ -1,0 +1,149 @@
+/* stylelint-disable at-rule-no-unknown */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+/* stylelint-enable at-rule-no-unknown */
+
+@layer base {
+  html { background: #f4f8f8; color: #102a35; scroll-behavior: smooth; }
+  body { margin: 0; min-width: 320px; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  button, input, textarea { font: inherit; }
+  button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #0d9488; outline-offset: 2px; }
+}
+
+@layer components {
+  .container-page {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-page {
+      padding-inline: 2rem;
+    }
+  }
+
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #0f766e;
+  }
+
+  /* 🌟 تحديث السطح (Cards) لتأثير رفع وانسيابية عند المرور */
+  .surface {
+    border: 1px solid #d8f1ee;
+    border-radius: 1.5rem;
+    background: #fff;
+    box-shadow: 0 25px 50px -12px rgba(15, 118, 110, 0.05);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .surface:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 30px 60px -15px rgba(13, 148, 136, 0.12);
+    border-color: #99f6e4;
+  }
+
+  /* 🌟 تأثيرات تفاعلية فخمة للزر الأساسي */
+  .button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+    padding: 0.875rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 10px 25px rgba(13, 148, 136, 0.3);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+  }
+
+  .button-primary:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(13, 148, 136, 0.45);
+  }
+
+  .button-primary:active {
+    transform: translateY(1px) scale(0.97);
+  }
+
+  .button-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* 🌟 تأثيرات تفاعلية فخمة للزر الثانوي */
+  .button-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    background: #fff;
+    padding: 0.875rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #334155;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+  }
+
+  .button-secondary:hover {
+    border-color: #5eead4;
+    background: rgba(240, 253, 250, 0.8);
+    color: #0f172a;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(13, 148, 136, 0.08);
+  }
+
+  .button-secondary:active {
+    transform: translateY(1px) scale(0.97);
+  }
+}
+
+/* === تأثيرات الحركة الاحترافية (Cube & Zipper) === */
+
+/* 1. تأثير Cube In (دخول بتأثير المكعب الثلاثي الأبعاد) */
+@keyframes cubeIn {
+  0% { opacity: 0; transform: perspective(900px) rotateX(-30deg) scale(0.85); }
+  100% { opacity: 1; transform: perspective(900px) rotateX(0deg) scale(1); }
+}
+.animate-cube-in {
+  animation: cubeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top;
+}
+
+/* 2. تأثير Cube Out (خروج بتتأثير المكعب) */
+@keyframes cubeOut {
+  0% { opacity: 1; transform: perspective(900px) rotateX(0deg) scale(1); }
+  100% { opacity: 0; transform: perspective(900px) rotateX(25deg) scale(0.9); }
+}
+.animate-cube-out {
+  animation: cubeOut 0.4s cubic-bezier(0.4, 0, 1, 1) forwards;
+  transform-origin: bottom;
+}
+
+/* 3. تأثير Zipper (فتح وغلق انسيابي يشبه السوستة) */
+@keyframes zipperOpen {
+  0% { opacity: 0; clip-path: inset(0 50% 0 50%); transform: scaleY(0.95); }
+  100% { opacity: 1; clip-path: inset(0 0% 0 0%); transform: scaleY(1); }
+}
+.animate-zipper {
+  animation: zipperOpen 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* تخصيص شريط التمرير (Scrollbar) */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

@@ -1,0 +1,15 @@
+# Python & Virtual Environments
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyv
+
+# Environment & Config Files (حماية المفاتيح السرية)
+.env
+.env.local
+backend/config.py
+
+# Data files
+data/processed/*.index
+data/processed/*.pkl
