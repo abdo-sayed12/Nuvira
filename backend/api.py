@@ -1,12 +1,3 @@
-import sys
-import os
-
-# إضافة مسار المشروع الأساسي لـ Python Path عشان يحل مشكلة Vercel نهائياً
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-sys.path.append(current_dir)
-
 import base64
 import io
 import os

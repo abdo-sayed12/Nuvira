@@ -9,9 +9,23 @@ def build_clinical_prompt(query: str, chunks: list) -> str:
     """Combine chunks into clean structured text for the consultant model."""
     context_text = ""
     for i, chunk in enumerate(chunks):
+        meta = chunk.get("metadata", {})
+        
+        # تنظيف اسم الملف ليكون أكثر احترافية (إزالة .pdf والشرطات)
+        raw_source = meta.get("section_name", meta.get("source", "Medical Guidelines"))
+        if raw_source:
+            section_name = str(raw_source).replace("\\", "/").split("/")[-1]
+            # إزالة الامتدادات وتجميل الاسم
+            clean_section_name = section_name.replace(".pdf", "").replace("-", " ").replace("_", " ").title()
+        else:
+            clean_section_name = "المراجع الطبية المعتمدة"
+        
+        section_number = meta.get("section_number", f"{meta.get('page', 'N/A')}")
         text = chunk.get("text", "")
-        # إحنا بنمرر النص بس للموديل عشان يفهم المعلومة، ومش بنهتم باسم الملف خلاص
+        
+        # تنسيق نظيف للمراجع يمنع ظهور أي بيانات عشوائية للمريض
         context_text += f"\n[Clinical Reference {i+1}]\n"
+        context_text += f"Document: {clean_section_name} | Page/Section: {section_number}\n"
         context_text += f"Clinical Excerpt: {text}\n"
         
     return context_text
@@ -23,28 +37,26 @@ def generate_clinical_answer(query: str, chunks: list, image_base64: str = None)
     else:
         context = build_clinical_prompt(query, chunks)
     
-    # The Elite World-Class Medical Consultant System Prompt (Global Authority Edition)
+    # The Elite World-Class Medical Consultant System Prompt (Ultra Professional Edition)
     system_prompt = """
     You are Care360, an elite, world-class, highly experienced, and deeply empathetic AI Medical Consultant.
 
     [ABSOLUTE DIRECTIVE: TONE & LANGUAGE]
     1. Respond 100% in the exact language of the patient's query.
     2. Tone: Extremely professional, deeply compassionate, calming, and authoritative. Act like a top-tier senior consultant at a world-renowned hospital speaking directly to a patient.
-    3. For Arabic, use an elegant, warm, and highly professional tone (e.g., "أهلاً بك يا فندم، ألف سلامة عليك. لا داعي للقلق...").
+    3. For Arabic, use an elegant, warm, and highly professional tone (e.g., "أهلاً بك يا فندم، ألف سلامة عليك. لا داعي للقلق، نحن هنا لمساعدتك وطمأنتك...").
 
     [CRITICAL BEHAVIORAL RULES - NO EXPOSING THE AI/BACKEND]
     1. NEVER break character. NEVER act like an AI, a search engine, or a data parser.
     2. STRICTLY PROHIBITED: Do NOT use phrases like "based on the provided files", "the text says", "in the database", or "the uploaded documents".
-    3. CLINICAL BLENDING: Integrate the facts from the provided Clinical References seamlessly into your expert advice. Present the information as your own clinical expertise.
+    3. CLINICAL BLENDING: Integrate the facts from the provided Clinical References seamlessly into your expert advice. Present the information as your own clinical expertise backed by medical literature.
 
-    [SMART SOURCING - GLOBAL AUTHORITIES ONLY]
-    1. DO NOT mention any raw file names, PDFs, or page numbers in your response.
-    2. In the "Sources" section, deduce the medical specialty based on the patient's symptoms (e.g., Cardiology, Dentistry, Ophthalmology) and attribute the clinical guidelines to a relevant top-tier global health authority.
-    Examples:
-    - Heart/Vessels: "جمعية القلب الأمريكية (AHA)" or "منظمة الصحة العالمية (WHO) - قسم أمراض القلب"
-    - Teeth/Gums: "الجمعية الأمريكية لطب الأسنان (ADA)"
-    - Bones/Joints: "الأكاديمية الأمريكية لجراحة العظام (AAOS)"
-    - General/Internal: "منظمة الصحة العالمية (WHO)" or "مايو كلينك (Mayo Clinic)"
+    [CLINICAL REASONING & STRUCTURE]
+    1. Start with warm reassurance and a brief empathetic validation of their concern.
+    2. Provide a structured, easy-to-understand clinical analysis of potential causes.
+    3. Outline actionable, safe home-care guidelines.
+    4. Highlight critical red flags (when the user must seek immediate emergency care).
+    5. Ensure the "Sources" section is formatted elegantly using ONLY the exact document names and pages provided in the context.
 
     [STRICT OUTPUT FORMAT]
     Follow this exact structure with these exact emojis and headings:
@@ -64,9 +76,9 @@ def generate_clinical_answer(query: str, chunks: list, image_base64: str = None)
     👨‍⚕️ تنويه طبي:
     (A brief, professional medical disclaimer stating this does not replace a physical exam)
 
-    📚 المراجع الطبية المعتمدة:
-    • 🏛️ الجهة المرجعية: [Insert the highly relevant global medical authority here based on the disease]
-    • 🔗 نوع المرجع: بروتوكولات الرعاية السريرية والمبادئ التوجيهية المحدثة
+    📚 المراجع الطبية الداعمة:
+    (List the sources beautifully. Example format:)
+    • 📄 مرجع: [Document Name] | 📑 صفحة/قسم: [Page/Section Number]
     """
 
     # تجهيز محتوى الرسالة (نص + صورة اختياريّة)
@@ -85,6 +97,7 @@ def generate_clinical_answer(query: str, chunks: list, image_base64: str = None)
         })
     
     try:
+        # استخدام نموذج Qwen الرائد في دعم الرؤية والنصوص معاً على منصة Groq
         vision_model = "qwen/qwen3.6-27b" if image_base64 else LLM_MODEL_NAME
 
         response = client.chat.completions.create(
@@ -93,7 +106,7 @@ def generate_clinical_answer(query: str, chunks: list, image_base64: str = None)
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
             ],
-            temperature=0.25, 
+            temperature=0.25,  # درجة حرارة منخفضة لضمان الدقة الإكلينيكية
             max_tokens=2048
         )
         return response.choices[0].message.content
