@@ -4,11 +4,15 @@ import { ChatPage } from "./pages/ChatPage";
 import { HomePage } from "./pages/HomePage";
 import { SafetyPage } from "./pages/SafetyPage";
 import { SourcesPage } from "./pages/SourcesPage";
+import { MedicalServices } from "./pages/MedicalServices"; // 👈 استيراد صفحة الخدمات الجديدة
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, PhoneCall, ShieldAlert, X } from "lucide-react";
 
+// ملاحظة: تأكد إنك نقلت ملف MedicalServices.tsx جوه فولدر pages عشان الاستيراد ده يشتغل
+
 export default function App() {
-  const [page, setPage] = useState<Page>("home");
+  // وسعنا نوع الـ Page (لو الـ TypeScript جاب خطأ هنا هنعدلها في الخطوة التانية)
+  const [page, setPage] = useState<Page | "services">("home");
   const [initialPrompt, setInitialPrompt] = useState<string>();
   
   // 🌍 إدارة اللغة بشكل مركزي وعالمي للأبد (منع فقدانها عند الـ Refresh)
@@ -184,7 +188,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* شريط التنقل العلوي */}
-      <TopNav page={page} setPage={setPage} />
+      <TopNav page={page as any} setPage={setPage as any} />
 
       {/* محتوى الصفحات مع انتقالات حركية سلسة للغاية (Page Transitions) */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -201,6 +205,8 @@ export default function App() {
             {page === "chat" && <ChatPage initialPrompt={initialPrompt} />}
             {page === "sources" && <SourcesPage />}
             {page === "safety" && <SafetyPage />}
+            {/* 👈 الصفحة الرابعة أضيفت هنا */}
+            {page === "services" && <MedicalServices />} 
           </motion.main>
         </AnimatePresence>
       </div>
@@ -213,7 +219,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* زر الطوارئ العائم (مع تفاعل حركي فخم عند اللمس والمرور) */}
+      {/* زر الطوارئ العائم */}
       <motion.button 
         whileHover={{ scale: 1.08, y: -3 }}
         whileTap={{ scale: 0.94 }}

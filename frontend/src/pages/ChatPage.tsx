@@ -1,4 +1,4 @@
-import { Check, Clipboard, CornerDownLeft, MessageCirclePlus, PanelLeft, RotateCcw, Send, ThumbsDown, ThumbsUp, Mic, ExternalLink, Volume2, Square, Trash2, Sparkles, Paperclip, X, FileText } from "lucide-react";
+import { Check, Clipboard, CornerDownLeft, MessageCirclePlus, PanelLeft, RotateCcw, Send, ThumbsDown, ThumbsUp, Mic, ExternalLink, Volume2, Square, Trash2, Sparkles, Paperclip, X, FileText, Pencil, MoreHorizontal, Share2 } from "lucide-react";
 import { FormEvent, useMemo, useState, useRef, useEffect } from "react";
 import { EmergencyCard } from "../components/EmergencyCard";
 import { FileUploader } from "../components/FileUploader";
@@ -152,7 +152,6 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
   });
 
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
-
   const [messages, setMessages] = useState<(ChatMessage & { fileName?: string })[]>(initialPrompt ? [{ id: "welcome", role: "assistant", body: "Welcome to CARE360. I can share general health information grounded in the sources shown below each answer." }] : [{ id: "welcome", role: "assistant", body: "Welcome to CARE360. Ask a health-information question. I will show the evidence I use." }]);
   const [draft, setDraft] = useState(initialPrompt ?? "");
   const [conversationId, setConversationId] = useState<string>();
@@ -164,10 +163,23 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
   const [selectedFile, setSelectedFile] = useState<{ name: string; type: string; base64: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // States for Editing & Context Menu
+  const [contextMenuId, setContextMenuId] = useState<string | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const cancelRequestRef = useRef<boolean>(false);
+
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const baseTextRef = useRef("");
   const userEditedRef = useRef(false);
+
+  // الحل الجذري والقياسي لإغلاق القائمة عند الضغط في أي مكان فارغ
+  useEffect(() => {
+    const handleClickOutside = () => setContextMenuId(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (messages.length > 1) {
@@ -207,7 +219,6 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = () => {
       setSelectedFile({
@@ -277,11 +288,12 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
     }
   };
 
-  async function send(value = draft) {
+  async function send(value = draft, historyOverride?: typeof messages) {
     const question = value.trim();
     if (!question && !selectedFile) return;
     if (loading) return;
 
+    cancelRequestRef.current = false;
     const queryText = question || (selectedFile ? `Analyze this file: ${selectedFile.name}` : "");
     const fileToSend = selectedFile;
     
@@ -290,19 +302,25 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
     setError(undefined); 
     setLoading(true);
 
-    setMessages((current) => [...current, { 
-      id: crypto.randomUUID(), 
-      role: "user", 
-      body: queryText, 
-      fileName: fileToSend?.name 
-    }]);
+    const currentHistory = historyOverride || messages;
+    const newUserMsg = { id: crypto.randomUUID(), role: "user" as const, body: queryText, fileName: fileToSend?.name };
+    
+    setMessages([...currentHistory, newUserMsg]);
 
     try {
       const reply = await api.chat(queryText, conversationId, fileToSend?.base64);
+      if (cancelRequestRef.current) return;
+      
       setConversationId(reply.conversation_id);
       setMessages((current) => [...current, { id: crypto.randomUUID(), role: "assistant", body: reply.answer, reply }]);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Error connecting to server."); }
-    finally { setLoading(false); }
+    } catch (caught) { 
+      if (!cancelRequestRef.current) {
+        setError(caught instanceof Error ? caught.message : "Error connecting to server."); 
+      }
+    }
+    finally { 
+      if (!cancelRequestRef.current) setLoading(false); 
+    }
   }
 
   function newConversation() {
@@ -325,19 +343,28 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
     e.stopPropagation();
     const updated = sessions.filter(s => s.id !== id);
     setSessions(updated);
-    try {
-      localStorage.setItem("care360_chat_sessions", JSON.stringify(updated));
-    } catch (err) {
-      console.error(err);
-    }
-    if (id === currentSessionId) {
-      newConversation();
-    }
+    try { localStorage.setItem("care360_chat_sessions", JSON.stringify(updated)); } catch (err) {}
+    if (id === currentSessionId) newConversation();
   }
 
   function submit(event: FormEvent) { event.preventDefault(); void send(); }
-  async function copy(id: string, text: string) { await navigator.clipboard?.writeText(text); setCopied(id); window.setTimeout(() => setCopied(undefined), 1800); }
   
+  async function copy(id: string, text: string) { 
+    await navigator.clipboard?.writeText(text); 
+    setCopied(id); 
+    window.setTimeout(() => setCopied(undefined), 1800); 
+  }
+  
+  async function handleShare(text: string) {
+    if (navigator.share) {
+      try { await navigator.share({ title: 'CARE360 Chat', text: text }); } 
+      catch (err) { console.error("Error sharing", err); }
+    } else {
+      await copy("share", text);
+      alert("تم نسخ النص للحافظة");
+    }
+  }
+
   function toggleSpeech(id: string, text: string) {
     if (speakingId === id) {
       window.speechSynthesis.cancel();
@@ -345,7 +372,6 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
     } else {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      
       const targetLangCode = detectMessageLanguage(text, lang);
       utterance.lang = targetLangCode;
       utterance.rate = 1.0;
@@ -353,14 +379,10 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
         const matchingVoice = voices.find(v => v.lang === targetLangCode || v.lang.startsWith(targetLangCode.split('-')[0]));
-        if (matchingVoice) {
-          utterance.voice = matchingVoice;
-        }
+        if (matchingVoice) utterance.voice = matchingVoice;
       }
-
       utterance.onend = () => setSpeakingId(null);
       utterance.onerror = () => setSpeakingId(null);
-      
       window.speechSynthesis.speak(utterance);
       setSpeakingId(id);
     }
@@ -369,17 +391,13 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
   async function handleFeedback(id: string, type: "up" | "down") {
     setFeedbacks((prev) => ({ ...prev, [id]: type }));
     try {
-      if ((api as any).submitFeedback) {
-        await (api as any).submitFeedback(id, type);
-      }
-    } catch (err) {
-      console.error("Failed to send feedback", err);
-    }
+      if ((api as any).submitFeedback) await (api as any).submitFeedback(id, type);
+    } catch (err) {}
   }
 
   return (
     <main className="container-page py-6 sm:py-8">
-      <div className="surface flex min-h-[calc(100vh-9rem)] overflow-hidden animate-cube-in bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200/80 dark:border-slate-800 transition-colors duration-300">
+      <div className="surface flex min-h-[calc(100dvh-9rem)] overflow-hidden animate-cube-in bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200/80 dark:border-slate-800 transition-colors duration-300">
         
         <aside className={`${sidebarOpen ? "absolute inset-y-0 left-0 z-30 flex animate-zipper" : "hidden"} w-80 shrink-0 flex-col border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 p-5 lg:static lg:flex shadow-xl lg:shadow-none rtl:border-r-0 rtl:border-l`}>
           <button onClick={newConversation} className="button-primary w-full flex justify-center items-center gap-2 py-3.5 shadow-md rounded-2xl">
@@ -431,11 +449,14 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
             </div>
           </header>
 
-          <div className="flex-1 space-y-6 overflow-y-auto p-5 sm:p-8 custom-scrollbar">
+          <div className="flex-1 space-y-6 overflow-y-auto p-5 pb-24 sm:p-8 sm:pb-8 custom-scrollbar relative">
             {messages.map((message, index) => (
-              <div key={message.id} className={`animate-zipper flex flex-col ${message.role === "user" ? "ml-auto rtl:mr-auto rtl:ml-0 items-end max-w-2xl" : "max-w-3xl items-start"}`}>
+              <div key={message.id} className={`group animate-zipper flex flex-col ${message.role === "user" ? "ml-auto rtl:mr-auto rtl:ml-0 items-end max-w-2xl" : "max-w-3xl items-start"}`}>
                 
-                <div dir={isArabic(message.body) ? "rtl" : "ltr"} className={message.role === "user" ? "rounded-3xl rounded-br-sm rtl:rounded-br-3xl rtl:rounded-bl-sm bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 text-sm leading-relaxed text-white font-medium shadow-md shadow-teal-900/10 space-y-2" : "rounded-3xl rounded-bl-sm rtl:rounded-bl-3xl rtl:rounded-br-sm border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 px-6 py-6 text-sm leading-relaxed text-slate-800 dark:text-slate-100 shadow-sm"}>
+                <div 
+                  dir={isArabic(message.body) ? "rtl" : "ltr"} 
+                  className={message.role === "user" ? "select-none relative rounded-3xl rounded-br-sm rtl:rounded-br-3xl rtl:rounded-bl-sm bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 text-sm leading-relaxed text-white font-medium shadow-md shadow-teal-900/10 space-y-2 cursor-default" : "rounded-3xl rounded-bl-sm rtl:rounded-bl-3xl rtl:rounded-br-sm border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 px-6 py-6 text-sm leading-relaxed text-slate-800 dark:text-slate-100 shadow-sm"}
+                >
                   
                   {message.fileName && (
                     <div className="inline-flex items-center gap-2 bg-white/20 dark:bg-black/20 px-3 py-1.5 rounded-xl text-xs font-bold text-white mb-2 border border-white/20">
@@ -446,9 +467,30 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
 
                   {message.reply && message.reply.risk_level === "urgent" && <div className="mb-4"><EmergencyCard arabic={isArabic(message.body)} /></div>}
                   
-                  <div className="font-sans space-y-1.5">
-                    {message.role === "assistant" ? renderFormattedMessage(message.body) : <div className="whitespace-pre-wrap">{message.body}</div>}
-                  </div>
+                  {/* وضع التعديل */}
+                  {editingMessageId === message.id ? (
+                    <div className="w-full min-w-[250px] flex flex-col gap-3 font-sans">
+                      <textarea 
+                        value={editDraft}
+                        onChange={(e) => setEditDraft(e.target.value)}
+                        className="w-full bg-white/20 dark:bg-black/20 text-white rounded-xl p-3 outline-none text-sm resize-none placeholder-white/50 border border-white/20"
+                        rows={3}
+                        autoFocus
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => setEditingMessageId(null)} className="px-4 py-1.5 bg-black/10 hover:bg-black/20 rounded-lg text-xs font-bold transition">إلغاء</button>
+                        <button onClick={() => {
+                          setEditingMessageId(null);
+                          const historyCut = messages.slice(0, index); 
+                          void send(editDraft, historyCut);
+                        }} className="px-4 py-1.5 bg-teal-800 hover:bg-teal-900 shadow-sm rounded-lg text-xs font-bold transition">حفظ وإرسال</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="font-sans space-y-1.5">
+                      {message.role === "assistant" ? renderFormattedMessage(message.body) : <div className="whitespace-pre-wrap">{message.body}</div>}
+                    </div>
+                  )}
                   
                   {message.reply && message.reply.sources.length > 0 && (
                     <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
@@ -469,11 +511,49 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
                       ))}
                     </div>
                   )}
-                  
                 </div>
 
+                {/* 🛡️ الزرار والقائمة المنبثقة (نسخة الـ 3 نقط الشغالة والمستقرة) */}
+                {message.role === "user" && !editingMessageId && (
+                  <div className={`mt-1 flex w-full px-2 ${isArabic(message.body) ? 'justify-start' : 'justify-end'}`}>
+                    <div className="relative">
+                      <button 
+                        type="button"
+                        onClick={(e) => { 
+                          e.stopPropagation();
+                          setContextMenuId(contextMenuId === message.id ? null : message.id); 
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-teal-600 bg-white/50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all opacity-70 hover:opacity-100 shadow-sm cursor-pointer"
+                        title="خيارات الرسالة"
+                      >
+                        <MoreHorizontal size={18} />
+                      </button>
+
+                      {contextMenuId === message.id && (
+                        <div 
+                          onClick={(e) => e.stopPropagation()}
+                          className={`absolute top-full mt-2 bg-white dark:bg-slate-800 shadow-2xl rounded-xl border border-slate-200 dark:border-slate-600 flex flex-col overflow-hidden z-[100] text-slate-800 dark:text-slate-200 text-sm min-w-[160px] animate-cube-in ${isArabic(message.body) ? 'left-0' : 'right-0'}`}
+                        >
+                          <button onClick={() => { setContextMenuId(null); setEditingMessageId(message.id); setEditDraft(message.body); }} className="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between gap-3 font-semibold transition">
+                            تعديل <Pencil size={15} className="text-teal-600 dark:text-teal-400" />
+                          </button>
+                          <div className="h-px bg-slate-100 dark:bg-slate-700/60" />
+                          <button onClick={() => { void copy(message.id, message.body); setContextMenuId(null); }} className="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between gap-3 font-semibold transition">
+                            نسخ <Clipboard size={15} className="text-teal-600 dark:text-teal-400" />
+                          </button>
+                          <div className="h-px bg-slate-100 dark:bg-slate-700/60" />
+                          <button onClick={() => { handleShare(message.body); setContextMenuId(null); }} className="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between gap-3 font-semibold transition">
+                            مشاركة <Share2 size={15} className="text-teal-600 dark:text-teal-400" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assistant Toolbar */}
                 {message.role === "assistant" && index > 0 && (
-                  <div className="mt-2.5 flex items-center gap-1.5 rtl:flex-row-reverse bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl px-2 py-1 shadow-2xs">
+                  <div className="mt-2.5 flex items-center gap-1.5 rtl:flex-row-reverse bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl px-2 py-1 shadow-2xs opacity-60 hover:opacity-100 transition-opacity">
                     <button onClick={() => void copy(message.id, message.body)} className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-teal-600 dark:hover:text-teal-400 transition" title="Copy">
                       {copied === message.id ? <Check size={15} className="text-emerald-600" /> : <Clipboard size={15} />}
                     </button>
@@ -482,7 +562,10 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
                       {speakingId === message.id ? <Square size={15} fill="currentColor" /> : <Volume2 size={15} />}
                     </button>
                     
-                    <button onClick={() => { const previous = messages[index - 1]; if (previous?.role === "user") void send(previous.body); }} className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-teal-600 dark:hover:text-teal-400 transition" title="Retry">
+                    <button onClick={() => { 
+                      const previous = messages[index - 1]; 
+                      if (previous?.role === "user") void send(previous.body, messages.slice(0, index - 1)); 
+                    }} className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-teal-600 dark:hover:text-teal-400 transition" title="Retry">
                       <RotateCcw size={15} />
                     </button>
                     
@@ -586,9 +669,24 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
                 dir="auto"
               />
               
-              <button disabled={(!draft.trim() && !selectedFile) || loading} className="button-primary h-12 w-12 rounded-2xl p-0 shrink-0 flex items-center justify-center shadow-lg hover:scale-105 transition-transform" aria-label="Send question">
-                <Send size={18} className="rtl:-scale-x-100" />
-              </button>
+              {loading ? (
+                <button 
+                  type="button" 
+                  onClick={(e) => { e.preventDefault(); cancelRequestRef.current = true; setLoading(false); }} 
+                  className="button-primary bg-red-500 hover:bg-red-600 border-red-500 dark:border-red-600 h-12 w-12 rounded-2xl p-0 shrink-0 flex items-center justify-center shadow-lg hover:scale-105 transition-transform" 
+                  aria-label="Stop Generating"
+                >
+                  <Square size={16} fill="currentColor" />
+                </button>
+              ) : (
+                <button 
+                  disabled={(!draft.trim() && !selectedFile) || loading} 
+                  className="button-primary h-12 w-12 rounded-2xl p-0 shrink-0 flex items-center justify-center shadow-lg hover:scale-105 transition-transform" 
+                  aria-label="Send question"
+                >
+                  <Send size={18} className="rtl:-scale-x-100" />
+                </button>
+              )}
             </form>
 
             <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">

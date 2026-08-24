@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { BrandMark } from "./BrandMark";
 import { motion, AnimatePresence } from "framer-motion";
 
-export type Page = "home" | "chat" | "sources" | "safety";
+export type Page = "home" | "chat" | "sources" | "safety" | "services";
 
 const languages = [
   { code: "ar", label: "🇪🇬 العربية" },
@@ -19,20 +19,26 @@ const languages = [
   { code: "tr", label: "🇹🇷 Türkçe" },
 ];
 
+// ==========================================
+// قاموس الترجمة الخاص بالشريط العلوي 🌍
+// ==========================================
+const navTranslations: Record<string, any> = {
+  ar: { home: "الرئيسية", sources: "المصادر", safety: "الأمان", services: "الخدمات الطبية", startChat: "ابدأ المحادثة", darkMode: "الوضع الداكن", lightMode: "الوضع الفاتح", theme: "المظهر", language: "اللغة" },
+  en: { home: "Home", sources: "Sources", safety: "Safety", services: "Medical Services", startChat: "Start chat", darkMode: "Dark Mode", lightMode: "Light Mode", theme: "Theme", language: "Language" },
+  fr: { home: "Accueil", sources: "Sources", safety: "Sécurité", services: "Services Médicaux", startChat: "Démarrer le chat", darkMode: "Mode Sombre", lightMode: "Mode Clair", theme: "Thème", language: "Langue" },
+  de: { home: "Startseite", sources: "Quellen", safety: "Sicherheit", services: "Medizinische Dienste", startChat: "Chat starten", darkMode: "Dunkelmodus", lightMode: "Heller Modus", theme: "Design", language: "Sprache" },
+  es: { home: "Inicio", sources: "Fuentes", safety: "Seguridad", services: "Servicios Médicos", startChat: "Iniciar chat", darkMode: "Modo Oscuro", lightMode: "Modo Claro", theme: "Tema", language: "Idioma" },
+  it: { home: "Home", sources: "Fonti", safety: "Sicurezza", services: "Servizi Medici", startChat: "Inizia chat", darkMode: "Modalità Scura", lightMode: "Modalità Chiara", theme: "Tema", language: "Lingua" },
+  ru: { home: "Главная", sources: "Источники", safety: "Безопасность", services: "Мед. услуги", startChat: "Начать чат", darkMode: "Темный", lightMode: "Светлый", theme: "Тема", language: "Язык" },
+  zh: { home: "首页", sources: "来源", safety: "安全", services: "医疗服务", startChat: "开始聊天", darkMode: "深色模式", lightMode: "浅色模式", theme: "主题", language: "语言" },
+  ja: { home: "ホーム", sources: "ソース", safety: "安全性", services: "医療サービス", startChat: "チャット開始", darkMode: "ダーク", lightMode: "ライト", theme: "テーマ", language: "言語" },
+  ko: { home: "홈", sources: "출처", safety: "안전", services: "의료 서비스", startChat: "채팅 시작", darkMode: "다크 모드", lightMode: "라이트 모드", theme: "테마", language: "언어" },
+  tr: { home: "Ana Sayfa", sources: "Kaynaklar", safety: "Güvenlik", services: "Tıbbi Hizmetler", startChat: "Sohbete başla", darkMode: "Karanlık Mod", lightMode: "Aydınlık Mod", theme: "Tema", language: "Dil" }
+};
+
 export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) => void }) {
   const [open, setOpen] = useState(false);
-  const links: { id: Page; label: string }[] = [
-    { id: "home", label: "Home" }, 
-    { id: "sources", label: "Sources" }, 
-    { id: "safety", label: "Safety" }
-  ];
-
-  const go = (destination: Page) => { 
-    setPage(destination); 
-    setOpen(false); 
-    window.scrollTo({ top: 0, behavior: "smooth" }); 
-  };
-
+  
   // ==========================================
   // 1. إعدادات الـ Dark Mode
   // ==========================================
@@ -101,6 +107,23 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
     // تحديث اتجاه ولغة المستند لتعمل في كل الصفحات والصوت تلقائياً
     document.documentElement.dir = code === "ar" ? "rtl" : "ltr";
     document.documentElement.lang = code;
+  };
+
+  // جلب الترجمة حسب اللغة الحالية
+  const t = navTranslations[currentLang] || navTranslations.en;
+
+  // الروابط متصلة بالترجمة الديناميكية
+  const links: { id: Page; label: string }[] = [
+    { id: "home", label: t.home }, 
+    { id: "sources", label: t.sources }, 
+    { id: "safety", label: t.safety },
+    { id: "services", label: t.services }
+  ];
+
+  const go = (destination: Page) => { 
+    setPage(destination); 
+    setOpen(false); 
+    window.scrollTo({ top: 0, behavior: "smooth" }); 
   };
 
   return (
@@ -181,13 +204,13 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
                 {isDark ? <Moon size={16} /> : <Sun size={16} />}
               </div>
               <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                {isDark ? "Dark Mode" : "Light Mode"}
+                {isDark ? t.darkMode : t.lightMode}
               </span>
             </div>
           </div>
 
           <button onClick={() => go("chat")} className="button-primary hidden md:block py-2.5">
-            Start chat
+            {t.startChat}
           </button>
 
           {/* القائمة الجانبية للموبايل */}
@@ -214,14 +237,14 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
             <div className="flex justify-around border-b border-slate-100 dark:border-slate-800 pb-4 mb-4">
               <button onClick={() => setLangMenuOpen(!langMenuOpen)} className="flex flex-col items-center gap-1">
                 <span className="text-2xl">🌍</span>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Language</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t.language}</span>
               </button>
               
               <button onClick={toggleTheme} className="flex flex-col items-center gap-1">
                 <div className="p-1.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
                   {isDark ? <Moon size={16} /> : <Sun size={16} />}
                 </div>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Theme</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t.theme}</span>
               </button>
             </div>
 
@@ -239,7 +262,7 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
               </div>
             )}
 
-            {[...links, { id: "chat" as Page, label: "Start chat" }].map((link) => (
+            {[...links, { id: "chat" as Page, label: t.startChat }].map((link) => (
               <button 
                 key={link.id} 
                 onClick={() => go(link.id)} 
