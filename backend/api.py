@@ -1,5 +1,3 @@
-import base64
-import io
 import os
 # ده السطر اللي بيمنع تحميل الموديل على السي ويقراه من الإي مباشرة
 os.environ["HF_HOME"] = "E:/huggingface_cache"
@@ -8,7 +6,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
-from pypdf import PdfReader
 
 from backend.retriever import metadata_aware_retrieve, rerank_evidence
 from backend.generator import generate_clinical_answer
@@ -26,7 +23,6 @@ app.add_middleware(
 
 class QueryRequest(BaseModel):
     message: str
-    file_base64: str | None = None  
 
 class SourceItem(BaseModel):
     section_name: str
@@ -41,54 +37,12 @@ class FeedbackRequest(BaseModel):
     message_id: str
     feedback: str 
 
-def extract_text_from_base64_file(base64_str: str) -> str:
-    try:
-        if "," in base64_str:
-            header, encoded = base64_str.split(",", 1)
-        else:
-            encoded = base64_str
-            header = ""
-
-        binary_data = base64.b64decode(encoded)
-
-        if "application/pdf" in header or binary_data.startswith(b"%PDF"):
-            reader = PdfReader(io.BytesIO(binary_data))
-            text = ""
-            for page in reader.pages:
-                extracted = page.extract_text()
-                if extracted:
-                    text += extracted + "\n"
-            return text
-        else:
-            try:
-                return binary_data.decode("utf-8")
-            except:
-                return ""
-    except Exception as e:
-        print(f"Error parsing uploaded file: {e}")
-        return ""
-
 @app.post("/api/chat", response_model=QueryResponse)
 async def chat_endpoint(request: QueryRequest):
     try:
-        image_base64_param = None
-        dynamic_chunks = []
-
-        if request.file_base64:
-            if "image/" in request.file_base64 or request.file_base64.startswith("data:image/"):
-                image_base64_param = request.file_base64
-            else:
-                extracted_text = extract_text_from_base64_file(request.file_base64)
-                if extracted_text:
-                    dynamic_chunks.append({
-                        "metadata": {"section_name": "User Uploaded Document", "section_number": "Full Text"},
-                        "text": extracted_text
-                    })
-
         retrieved_chunks = metadata_aware_retrieve(request.message, k=3)
-        all_chunks = dynamic_chunks + retrieved_chunks
-        top_chunks = rerank_evidence(request.message, all_chunks, top_k=3)
-        answer = generate_clinical_answer(request.message, top_chunks, image_base64=image_base64_param)
+        top_chunks = rerank_evidence(request.message, retrieved_chunks, top_k=3)
+        answer = generate_clinical_answer(request.message, top_chunks)
         
         sources = []
         for chunk in top_chunks:

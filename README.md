@@ -83,6 +83,7 @@ npm run dev
 
 # تشغيل خادم FastAPI
 uvicorn backend.api:app --host 0.0.0.0 --port 8000 --reload
+
 تم تطوير هذا النظام بهندسة برمجية دقيقة ليجمع بين كفاءة الأطباء وذكاء الآلة.
 
 Developed by [CODEX Team]

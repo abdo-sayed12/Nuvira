@@ -1,7 +1,6 @@
-import { Check, Clipboard, CornerDownLeft, MessageCirclePlus, PanelLeft, RotateCcw, Send, ThumbsDown, ThumbsUp, Mic, ExternalLink, Volume2, Square, Trash2, Sparkles, Paperclip, X, FileText, Pencil, MoreHorizontal, Share2 } from "lucide-react";
+import { Check, Clipboard, CornerDownLeft, MessageCirclePlus, PanelLeft, RotateCcw, Send, ThumbsDown, ThumbsUp, Mic, ExternalLink, Volume2, Square, Trash2, Sparkles, Pencil, MoreHorizontal, Share2 } from "lucide-react";
 import { FormEvent, useMemo, useState, useRef, useEffect } from "react";
 import { EmergencyCard } from "../components/EmergencyCard";
-import { FileUploader } from "../components/FileUploader";
 import { api } from "../lib/api";
 import type { ChatMessage } from "../types/api";
 
@@ -126,14 +125,14 @@ const renderFormattedMessage = (text: string) => {
 };
 
 const translations: Record<string, any> = {
-  en: { welcomeTitle: "Health Information Intelligence", welcomeSub: "Evidence-grounded · Verified clinical safety boundaries", newChat: "New conversation", thisSession: "Chat History", noRecent: "Your past conversations will appear here.", uploadNote: "Only upload authorized documents. Avoid personal records.", placeholder: "Ask a general health question or upload a file…", listening: "Listening now... Speak clearly!", pressEnter: "Press Enter for a new line; use Send when ready.", prompts: ["What are warning signs of a stroke?", "How does physical activity support health?", "General diet for diabetes?"] },
-  ar: { welcomeTitle: "مركز الذكاء الصحي المتطور", welcomeSub: "مبني على الأدلة العلمية · معايير أمان سريري معتمدة", newChat: "محادثة جديدة", thisSession: "سجل المحادثات", noRecent: "محادثاتك السابقة ستظهر هنا.", uploadNote: "ارفع المستندات المصرح بها فقط. تجنب السجلات الشخصية.", placeholder: "اطرح سؤالاً صحياً أو ارفع ملفاً/تقريراً...", listening: "جاري الاستماع... تحدث بوضوح!", pressEnter: "اضغط Enter لسطر جديد. استخدم إرسال للبحث.", prompts: ["ما هي علامات السكتة الدماغية؟", "كيف تدعم الرياضة صحة القلب؟", "النظام الغذائي لمرضى السكري؟"] }
+  en: { welcomeTitle: "Health Information Intelligence", welcomeSub: "Evidence-grounded · Verified clinical safety boundaries", newChat: "New conversation", thisSession: "Chat History", noRecent: "Your past conversations will appear here.", placeholder: "Ask a general health question…", listening: "Listening now... Speak clearly!", pressEnter: "Press Enter for a new line; use Send when ready.", prompts: ["What are warning signs of a stroke?", "How does physical activity support health?", "General diet for diabetes?"] },
+  ar: { welcomeTitle: "مركز الذكاء الصحي المتطور", welcomeSub: "مبني على الأدلة العلمية · معايير أمان سريري معتمدة", newChat: "محادثة جديدة", thisSession: "سجل المحادثات", noRecent: "محادثاتك السابقة ستظهر هنا.", placeholder: "اطرح سؤالاً صحياً...", listening: "جاري الاستماع... تحدث بوضوح!", pressEnter: "اضغط Enter لسطر جديد. استخدم إرسال للبحث.", prompts: ["ما هي علامات السكتة الدماغية؟", "كيف تدعم الرياضة صحة القلب؟", "النظام الغذائي لمرضى السكري؟"] }
 };
 
 interface ChatSession {
   id: string;
   title: string;
-  messages: (ChatMessage & { fileName?: string })[];
+  messages: ChatMessage[];
   conversationId?: string;
 }
 
@@ -152,16 +151,13 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
   });
 
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
-  const [messages, setMessages] = useState<(ChatMessage & { fileName?: string })[]>(initialPrompt ? [{ id: "welcome", role: "assistant", body: "Welcome to CARE360. I can share general health information grounded in the sources shown below each answer." }] : [{ id: "welcome", role: "assistant", body: "Welcome to CARE360. Ask a health-information question. I will show the evidence I use." }]);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialPrompt ? [{ id: "welcome", role: "assistant", body: "Welcome to CARE360. I can share general health information grounded in the sources shown below each answer." }] : [{ id: "welcome", role: "assistant", body: "Welcome to CARE360. Ask a health-information question. I will show the evidence I use." }]);
   const [draft, setDraft] = useState(initialPrompt ?? "");
   const [conversationId, setConversationId] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [copied, setCopied] = useState<string>();
-  
-  const [selectedFile, setSelectedFile] = useState<{ name: string; type: string; base64: string } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // States for Editing & Context Menu
   const [contextMenuId, setContextMenuId] = useState<string | null>(null);
@@ -174,7 +170,6 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
   const baseTextRef = useRef("");
   const userEditedRef = useRef(false);
 
-  // الحل الجذري والقياسي لإغلاق القائمة عند الضغط في أي مكان فارغ
   useEffect(() => {
     const handleClickOutside = () => setContextMenuId(null);
     document.addEventListener("click", handleClickOutside);
@@ -215,20 +210,6 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
   }, []);
   
   const t = translations[lang] || translations.en;
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setSelectedFile({
-        name: file.name,
-        type: file.type,
-        base64: reader.result as string
-      });
-    };
-    reader.readAsDataURL(file);
-  };
 
   const toggleListening = () => {
     if (isListening) {
@@ -290,25 +271,23 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
 
   async function send(value = draft, historyOverride?: typeof messages) {
     const question = value.trim();
-    if (!question && !selectedFile) return;
+    if (!question) return;
     if (loading) return;
 
     cancelRequestRef.current = false;
-    const queryText = question || (selectedFile ? `Analyze this file: ${selectedFile.name}` : "");
-    const fileToSend = selectedFile;
+    const queryText = question;
     
     setDraft(""); 
-    setSelectedFile(null);
     setError(undefined); 
     setLoading(true);
 
     const currentHistory = historyOverride || messages;
-    const newUserMsg = { id: crypto.randomUUID(), role: "user" as const, body: queryText, fileName: fileToSend?.name };
+    const newUserMsg = { id: crypto.randomUUID(), role: "user" as const, body: queryText };
     
     setMessages([...currentHistory, newUserMsg]);
 
     try {
-      const reply = await api.chat(queryText, conversationId, fileToSend?.base64);
+      const reply = await api.chat(queryText, conversationId);
       if (cancelRequestRef.current) return;
       
       setConversationId(reply.conversation_id);
@@ -426,11 +405,6 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
               )) : <p className="px-2 py-4 text-sm text-slate-400 dark:text-slate-500 text-center italic">لا توجد محادثات سابقة</p>}
             </div>
           </div>
-
-          <div className="mt-auto border-t border-slate-200/60 dark:border-slate-800 pt-5">
-            <FileUploader />
-            <p className="mt-3 text-xs leading-5 text-slate-400 dark:text-slate-500">{t.uploadNote}</p>
-          </div>
         </aside>
 
         <section className="flex min-w-0 flex-1 flex-col bg-slate-50/30 dark:bg-slate-950 transition-colors duration-300">
@@ -458,13 +432,6 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
                   className={message.role === "user" ? "select-none relative rounded-3xl rounded-br-sm rtl:rounded-br-3xl rtl:rounded-bl-sm bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 text-sm leading-relaxed text-white font-medium shadow-md shadow-teal-900/10 space-y-2 cursor-default" : "rounded-3xl rounded-bl-sm rtl:rounded-bl-3xl rtl:rounded-br-sm border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 px-6 py-6 text-sm leading-relaxed text-slate-800 dark:text-slate-100 shadow-sm"}
                 >
                   
-                  {message.fileName && (
-                    <div className="inline-flex items-center gap-2 bg-white/20 dark:bg-black/20 px-3 py-1.5 rounded-xl text-xs font-bold text-white mb-2 border border-white/20">
-                      <FileText size={14} />
-                      <span>{message.fileName}</span>
-                    </div>
-                  )}
-
                   {message.reply && message.reply.risk_level === "urgent" && <div className="mb-4"><EmergencyCard arabic={isArabic(message.body)} /></div>}
                   
                   {/* وضع التعديل */}
@@ -513,7 +480,7 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
                   )}
                 </div>
 
-                {/* 🛡️ الزرار والقائمة المنبثقة (نسخة الـ 3 نقط الشغالة والمستقرة) */}
+                {/* 🛡️ الزرار والقائمة المنبثقة */}
                 {message.role === "user" && !editingMessageId && (
                   <div className={`mt-1 flex w-full px-2 ${isArabic(message.body) ? 'justify-start' : 'justify-end'}`}>
                     <div className="relative">
@@ -606,37 +573,7 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
               ))}
             </div>
 
-            {selectedFile && (
-              <div className="mb-3 flex items-center justify-between bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-800 px-4 py-2 rounded-2xl animate-cube-in">
-                <div className="flex items-center gap-2.5 overflow-hidden">
-                  <FileText size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
-                  <span className="text-xs font-bold text-teal-900 dark:text-teal-200 truncate">{selectedFile.name}</span>
-                </div>
-                <button onClick={() => setSelectedFile(null)} className="text-slate-400 hover:text-red-500 transition p-1">
-                  <X size={16} />
-                </button>
-              </div>
-            )}
-
             <form onSubmit={submit} className="flex items-end gap-3 rounded-3xl border border-slate-300/80 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 shadow-sm transition-all focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-500/10">
-              
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-                className="hidden" 
-                accept="image/*,.pdf,.txt,.doc,.docx" 
-              />
-
-              <button 
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 dark:bg-slate-800 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm group"
-                title="Upload Image or Document"
-              >
-                <span className="absolute inset-0 rounded-2xl bg-teal-400/20 group-hover:animate-ping opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                <Paperclip size={19} className="relative z-10 transition-transform group-hover:rotate-12" />
-              </button>
 
               <button 
                 type="button"
@@ -680,7 +617,7 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
                 </button>
               ) : (
                 <button 
-                  disabled={(!draft.trim() && !selectedFile) || loading} 
+                  disabled={!draft.trim() || loading} 
                   className="button-primary h-12 w-12 rounded-2xl p-0 shrink-0 flex items-center justify-center shadow-lg hover:scale-105 transition-transform" 
                   aria-label="Send question"
                 >

@@ -28,7 +28,6 @@ export interface ChatMessage {
   role: "user" | "assistant";
   body: string;
   reply?: ChatReply;
-  fileName?: string;
 }
 
 const API_BASE = (import.meta as any).env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api";
@@ -46,10 +45,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  chat: (message: string, conversation_id?: string, file_base64?: string) => 
+  chat: (message: string, conversation_id?: string) => 
     request<ChatReply>("/chat", { 
       method: "POST", 
-      body: JSON.stringify({ message, conversation_id, file_base64 }) 
+      body: JSON.stringify({ message, conversation_id }) 
     }),
   
   sources: () => request<Source[]>("/sources"),
