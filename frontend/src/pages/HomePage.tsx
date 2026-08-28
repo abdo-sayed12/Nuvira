@@ -1,6 +1,7 @@
 import { Activity, Apple, ArrowRight, BedDouble, Brain, Dumbbell, HeartPulse, ShieldCheck, Sparkles, Stethoscope } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { WarpText } from "../components/WarpText";
 
 const translations: Record<string, any> = {
   en: { eyebrow: "Evidence before answers", title1: "Your Evidence-Grounded", title2: "Health Assistant", desc: "Get clear health information grounded in trusted medical sources. CARE360 makes its evidence visible, so you can explore everyday health questions with context—not guesswork.", start: "Start a conversation", explore: "Explore topics", disclaimer: "CARE360 provides educational information only. It does not diagnose, prescribe personal doses, or replace a clinician or emergency services.", signal: "Care signal", signalTitle: "Helpful, transparent, careful.", grounded: "Grounded answers", groundedDesc: "Retrieved evidence informs every answer. If the evidence is not enough, CARE360 says so.", aware: "Emergency-aware by design", awareDesc: "Potential emergency signals receive a prominent, immediate safety message.", familiar: "Start somewhere familiar", everyday: "Everyday health topics", askOwn: "Ask your own question →", t1: "Heart health", d1: "Learn about warning signs and cardiovascular wellbeing.", t2: "Blood pressure", d2: "Evidence-led information on hypertension.", t3: "Diabetes", d3: "General education from trusted global health sources.", t4: "Pain & posture", d4: "Back, neck, ergonomics, and movement wellbeing.", t5: "Sleep & wellness", d5: "Healthy routines that support daily wellbeing.", t6: "Digestive health", d6: "Educational information on IBS and common topics.", exploreTopic: "Explore →" },
@@ -18,6 +19,7 @@ const translations: Record<string, any> = {
 
 export function HomePage({ startChat }: { startChat: (prompt?: string) => void }) {
   const [lang, setLang] = useState(document.documentElement.lang || 'en');
+  const shouldReduceMotion = useReducedMotion();
   useEffect(() => {
     const observer = new MutationObserver(() => setLang(document.documentElement.lang || 'en'));
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
@@ -36,45 +38,60 @@ export function HomePage({ startChat }: { startChat: (prompt?: string) => void }
   ] as const;
 
   return (
-    <main className="animate-cube-in bg-white dark:bg-slate-950 transition-colors duration-300">
+    <main className="premium-page animate-cube-in transition-colors duration-300">
       <section className="container-page grid gap-12 py-16 lg:grid-cols-[1.1fr_.9fr] lg:py-24">
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5 }}>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, ease: [0.22, 1, 0.36, 1] }}>
           <p className="eyebrow text-teal-600 dark:text-teal-400">{t.eyebrow}</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[1.08] tracking-tight text-slate-900 dark:text-white sm:text-6xl">
-            {t.title1} <span className="text-teal-600 dark:text-teal-400">{t.title2}</span>
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">{t.desc}</p>
-          <div className="mt-8 flex flex-wrap gap-4">
-            <button className="button-primary text-base px-6 py-3" onClick={() => startChat()}>{t.start} <ArrowRight size={19} className="rtl:-scale-x-100 inline-block ml-2 rtl:mr-2 rtl:ml-0" /></button>
-            <button className="button-secondary text-base px-6 py-3 dark:bg-slate-800 dark:text-white dark:border-slate-700 dark:hover:bg-slate-700" onClick={() => document.getElementById("topics")?.scrollIntoView({ behavior: "smooth" })}>{t.explore}</button>
-          </div>
-          <p className="mt-6 max-w-xl text-xs leading-5 text-slate-400 dark:text-slate-500">{t.disclaimer}</p>
+          <motion.h1
+            aria-label={`${t.title1} ${t.title2}`}
+            className="font-display mt-4 max-w-3xl text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-6xl"
+            animate={shouldReduceMotion ? undefined : { y: [-1.3, 2.6, -1.3], x: [-1.3, 1.3, -1.3], rotate: [-0.2, 0.2, -0.2], opacity: [0.985, 1, 0.985] }}
+            transition={shouldReduceMotion ? undefined : { delay: 1.05, duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <WarpText text={t.title1} radius={140} strength={0.35} maxDisplacement={12} />{" "}<span className="text-teal-600 dark:text-teal-400"><WarpText text={t.title2} radius={140} strength={0.35} maxDisplacement={12} delay={0.16} /></span>
+          </motion.h1>
+          <motion.p
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, filter: "blur(5px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: shouldReduceMotion ? 0.15 : 0.7, delay: shouldReduceMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-6 max-w-2xl text-lg leading-8 text-slate-300"
+          >{t.desc}</motion.p>
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: shouldReduceMotion ? 0.15 : 0.6, delay: shouldReduceMotion ? 0 : 1.02, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-8 flex flex-wrap gap-4"
+          >
+            <motion.button whileHover={shouldReduceMotion ? undefined : { y: -2, scale: 1.02 }} whileTap={shouldReduceMotion ? undefined : { scale: 0.975 }} transition={{ type: "spring", stiffness: 380, damping: 28 }} className="button-primary text-base px-6 py-3" onClick={() => startChat()}>{t.start} <ArrowRight size={19} className="rtl:-scale-x-100 inline-block ml-2 rtl:mr-2 rtl:ml-0" /></motion.button>
+            <motion.button whileHover={shouldReduceMotion ? undefined : { y: -2, scale: 1.015 }} whileTap={shouldReduceMotion ? undefined : { scale: 0.975 }} transition={{ type: "spring", stiffness: 380, damping: 28 }} className="button-secondary button-glass text-base px-6 py-3" onClick={() => document.getElementById("topics")?.scrollIntoView({ behavior: "smooth" })}>{t.explore}</motion.button>
+          </motion.div>
+          <p className="mt-6 max-w-xl text-xs leading-5 text-slate-500">{t.disclaimer}</p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, scale: .95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .5, delay: .1 }} className="surface overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-white to-teal-50/30 dark:from-slate-900 dark:to-teal-900/20 dark:border-slate-800 shadow-xl rounded-3xl">
+        <motion.div initial={{ opacity: 0, scale: .97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .7, delay: .1 }} className="premium-glass surface overflow-hidden p-6 sm:p-8 shadow-xl rounded-3xl">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400">{t.signal}</p>
-              <h2 className="mt-1 text-2xl font-black text-slate-900 dark:text-white">{t.signalTitle}</h2>
+              <h2 className="font-display mt-1 text-2xl font-bold text-white">{t.signalTitle}</h2>
             </div>
             <span className="rounded-2xl bg-teal-100/80 dark:bg-teal-900/50 p-3 text-teal-700 dark:text-teal-300"><ShieldCheck size={32} /></span>
           </div>
           <div className="mt-7 space-y-4">
-            <div className="rounded-2xl border border-teal-100/80 dark:border-teal-800/40 bg-white dark:bg-slate-800 p-4 shadow-sm">
+            <div className="premium-glass rounded-2xl p-4 shadow-sm">
               <div className="flex gap-3.5">
                 <Sparkles className="shrink-0 text-teal-600 dark:text-teal-400 mt-0.5" size={20} />
                 <div>
-                  <h3 className="font-bold text-slate-800 dark:text-slate-200">{t.grounded}</h3>
-                  <p className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-400">{t.groundedDesc}</p>
+                  <h3 className="font-display font-bold text-white">{t.grounded}</h3>
+                  <p className="mt-1 text-sm leading-5 text-slate-400">{t.groundedDesc}</p>
                 </div>
               </div>
             </div>
-            <div className="rounded-2xl border border-teal-100/80 dark:border-teal-800/40 bg-white dark:bg-slate-800 p-4 shadow-sm">
+            <div className="premium-glass rounded-2xl p-4 shadow-sm">
               <div className="flex gap-3.5">
                 <Stethoscope className="shrink-0 text-teal-600 dark:text-teal-400 mt-0.5" size={20} />
                 <div>
-                  <h3 className="font-bold text-slate-800 dark:text-slate-200">{t.aware}</h3>
-                  <p className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-400">{t.awareDesc}</p>
+                  <h3 className="font-display font-bold text-white">{t.aware}</h3>
+                  <p className="mt-1 text-sm leading-5 text-slate-400">{t.awareDesc}</p>
                 </div>
               </div>
             </div>
@@ -82,21 +99,21 @@ export function HomePage({ startChat }: { startChat: (prompt?: string) => void }
         </motion.div>
       </section>
 
-      <section id="topics" className="border-y border-teal-100 dark:border-slate-800 bg-white dark:bg-slate-950 py-16 transition-colors duration-300">
+      <section id="topics" className="border-y border-white/10 bg-slate-950/20 py-16 transition-colors duration-300">
         <div className="container-page">
           <p className="eyebrow text-teal-600 dark:text-teal-400">{t.familiar}</p>
           <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-            <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{t.everyday}</h2>
+            <h2 className="font-display text-3xl font-bold tracking-tight text-white">{t.everyday}</h2>
             <button onClick={() => startChat()} className="text-sm font-bold text-teal-700 dark:text-teal-400 hover:text-teal-800 transition">{t.askOwn}</button>
           </div>
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {topics.map(([Icon, title, description]) => (
-              <button key={title as string} onClick={() => startChat(`Tell me about ${title}.`)} className="surface group p-6 text-left rtl:text-right transition hover:-translate-y-1 hover:border-teal-300 dark:hover:border-teal-600 hover:shadow-xl dark:bg-slate-900 dark:border-slate-800 rounded-3xl">
-                <div className="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-slate-800 flex items-center justify-center text-teal-600 dark:text-teal-400 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+              <button key={title as string} onClick={() => startChat(`Tell me about ${title}.`)} className="premium-glass group p-6 text-left rtl:text-right transition hover:-translate-y-1 hover:border-cyan-300/50 hover:shadow-xl rounded-3xl">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-400/10 flex items-center justify-center text-cyan-300 group-hover:bg-cyan-400 group-hover:text-slate-950 transition-colors">
                   <Icon size={24} />
                 </div>
-                <h3 className="mt-5 text-lg font-bold text-slate-900 dark:text-white">{title as string}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{description as string}</p>
+                <h3 className="font-display mt-5 text-lg font-bold text-white">{title as string}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{description as string}</p>
                 <span className="mt-5 inline-block text-sm font-bold text-teal-700 dark:text-teal-400 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">{t.exploreTopic}</span>
               </button>
             ))}

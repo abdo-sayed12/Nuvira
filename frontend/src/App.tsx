@@ -7,6 +7,7 @@ import { SourcesPage } from "./pages/SourcesPage";
 import { MedicalServices } from "./pages/MedicalServices"; // 👈 استيراد صفحة الخدمات الجديدة
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, PhoneCall, ShieldAlert, X } from "lucide-react";
+import { AuroraBackground } from "./components/AuroraBackground";
 
 // ملاحظة: تأكد إنك نقلت ملف MedicalServices.tsx جوه فولدر pages عشان الاستيراد ده يشتغل
 
@@ -78,7 +79,8 @@ export default function App() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col justify-between relative selection:bg-teal-500 selection:text-white">
+    <div className="aurora-app flex min-h-screen flex-col justify-between relative selection:bg-teal-500 selection:text-white">
+      <AuroraBackground tone={page === "services" ? "services" : page === "sources" ? "sources" : page === "safety" ? "safety" : "home"} />
       
       {/* النوافذ المنبثقة (Modals) مع تأثيرات حركية فائقة النعومة */}
       <AnimatePresence>
@@ -188,6 +190,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* شريط التنقل العلوي */}
+      <div className="relative z-10 flex min-h-screen flex-col">
       <TopNav page={page as any} setPage={setPage as any} />
 
       {/* محتوى الصفحات مع انتقالات حركية سلسة للغاية (Page Transitions) */}
@@ -212,10 +215,10 @@ export default function App() {
       </div>
 
       {/* الفوتر الاحترافي */}
-      <footer className="mt-auto border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 py-8 shadow-sm transition-colors duration-300">
+      <footer className="premium-footer mt-auto border-t border-white/10 bg-slate-950/70 py-8 shadow-sm transition-colors duration-300">
         <div className="container-page flex flex-col justify-between gap-4 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} CARE360 · Evidence-Grounded Health Intelligence System</p>
-          <p className="font-medium text-teal-700 dark:text-teal-500">Not a diagnostic service. For medical emergencies, contact local services immediately.</p>
+          <p className="font-medium text-teal-400">Not a diagnostic service. For medical emergencies, contact local services immediately.</p>
         </div>
       </footer>
 
@@ -233,7 +236,7 @@ export default function App() {
         </span>
         🚨 Emergency
       </motion.button>
-
+      </div>
     </div>
   );
 }

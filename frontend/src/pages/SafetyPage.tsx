@@ -26,23 +26,23 @@ export function SafetyPage() {
   const t = translations[lang] || translations.en;
 
   return (
-    <main className="container-page py-12 sm:py-16 animate-cube-in bg-white dark:bg-slate-950 transition-colors duration-300">
+    <main className="premium-page container-page py-12 sm:py-16 animate-cube-in transition-colors duration-300">
       <p className="eyebrow text-teal-600 dark:text-teal-400">{t.eyebrow}</p>
       <h1 className="mt-3 max-w-3xl text-4xl font-black tracking-tight text-slate-900 dark:text-white sm:text-5xl">{t.title}</h1>
       <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600 dark:text-slate-300">{t.desc}</p>
       <div className="mt-10"><EmergencyCard arabic={lang === "ar"} /></div>
       <section className="mt-10 grid gap-6 md:grid-cols-3">
-        <article className="surface p-7 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl hover:border-teal-300 dark:hover:border-teal-600 transition-colors">
+        <article className="premium-glass surface p-7 rounded-3xl hover:border-teal-300 dark:hover:border-teal-600 transition-colors">
           <Stethoscope className="text-teal-600 dark:text-teal-400" size={28} />
           <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">{t.notDoctor}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{t.notDoctorDesc}</p>
         </article>
-        <article className="surface p-7 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl hover:border-teal-300 dark:hover:border-teal-600 transition-colors">
+        <article className="premium-glass surface p-7 rounded-3xl hover:border-teal-300 dark:hover:border-teal-600 transition-colors">
           <BookOpenCheck className="text-teal-600 dark:text-teal-400" size={28} />
           <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">{t.evidence}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{t.evidenceDesc}</p>
         </article>
-        <article className="surface p-7 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl hover:border-teal-300 dark:hover:border-teal-600 transition-colors">
+        <article className="premium-glass surface p-7 rounded-3xl hover:border-teal-300 dark:hover:border-teal-600 transition-colors">
           <ShieldAlert className="text-teal-600 dark:text-teal-400" size={28} />
           <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">{t.emergency}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{t.emergencyDesc}</p>

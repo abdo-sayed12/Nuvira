@@ -40,8 +40,8 @@ export function SourcesPage() {
   const t = translations[lang] || translations.en;
 
   return (
-    <main className="container-page py-12 sm:py-16 animate-cube-in">
-      <div className="surface bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-10 border border-slate-200/80 dark:border-slate-800 shadow-sm transition-colors duration-300">
+    <main className="premium-page container-page py-12 sm:py-16 animate-cube-in">
+      <div className="premium-glass surface rounded-3xl p-6 sm:p-10 shadow-sm transition-colors duration-300">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 text-xs font-bold uppercase tracking-wider mb-4 border border-teal-200/60 dark:border-teal-800/40">
             <Globe size={14} /> {t.badge}
@@ -61,7 +61,7 @@ export function SourcesPage() {
               href={source.url} 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="surface group p-6 rounded-3xl bg-slate-50/50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800 hover:border-teal-400 dark:hover:border-teal-500 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+              className="premium-glass surface group p-6 rounded-3xl hover:border-teal-400 dark:hover:border-teal-500 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">

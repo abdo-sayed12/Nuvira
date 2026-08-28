@@ -234,7 +234,7 @@ export function MedicalServices() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 md:p-12 font-sans transition-colors duration-300" dir={isRtl ? "rtl" : "ltr"}>
+    <div className="premium-page min-h-screen p-6 md:p-12 font-sans transition-colors duration-300" dir={isRtl ? "rtl" : "ltr"}>
       
       <header className="mb-10 text-center animate-cube-in">
         <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-teal-600 to-emerald-500 bg-clip-text text-transparent inline-flex items-center gap-3">
@@ -289,7 +289,7 @@ export function MedicalServices() {
           return (
             <div
               key={provider.id}
-              className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl border border-slate-100 dark:border-slate-800 flex flex-col transition-all hover:-translate-y-1 hover:shadow-2xl group animate-zipper"
+              className="premium-glass rounded-3xl p-6 shadow-xl flex flex-col transition-all hover:-translate-y-1 hover:shadow-2xl group animate-zipper"
             >
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-lg font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
