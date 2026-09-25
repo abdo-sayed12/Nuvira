@@ -140,6 +140,27 @@
     box-shadow: none !important;
   }
 
+  .input-primary {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.875rem;
+    background: #fff;
+    padding: 0.75rem 0.875rem;
+    color: #0f172a;
+    outline: none;
+  }
+
+  .input-primary:focus {
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+  }
+
+  .dark .input-primary {
+    border-color: #334155;
+    background: #0f172a;
+    color: #f8fafc;
+  }
+
   /* 🌟 تأثيرات تفاعلية فخمة للزر الثانوي */
   .button-secondary {
     display: inline-flex;

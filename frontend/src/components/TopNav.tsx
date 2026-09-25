@@ -2,6 +2,7 @@ import { Menu, X, Sun, Moon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { BrandMark } from "./BrandMark";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../auth";
 
 export type Page = "home" | "chat" | "sources" | "safety" | "services";
 
@@ -37,6 +38,7 @@ const navTranslations: Record<string, any> = {
 };
 
 export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) => void }) {
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   
   // ==========================================
@@ -212,6 +214,7 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
           <button onClick={() => go("chat")} className="button-primary hidden md:block py-2.5">
             {t.startChat}
           </button>
+          {user && <button onClick={() => void logout()} className="hidden text-sm font-semibold text-slate-300 hover:text-white md:block">Sign out</button>}
 
           {/* القائمة الجانبية للموبايل */}
           <button 

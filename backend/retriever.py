@@ -4,14 +4,16 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from backend.config import (
+    AI_MAX_RETRIEVAL_CHUNKS,
+    AI_MAX_CONTEXT_CHARS,
     CONDITION_MAP,
     EMBEDDING_MODEL_NAME,
+    PROCESSED_DATA_DIR,
     RERANKER_MODEL_NAME
 )
 
 # تثبيت المسار بشكل صريح وقاطع عشان الكود ميتوهش
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_DIR = os.path.join(BASE_DIR, "data", "processed", "my_rag")
+DB_DIR = os.path.join(PROCESSED_DATA_DIR, "my_rag")
 
 print("\n" + "="*50)
 print(f"🔍 السيرفر بيبحث عن قاعدة البيانات (العقل) في المسار ده:")
@@ -41,7 +43,10 @@ def extract_condition_from_query(query: str) -> str:
             return condition
     return None
 
-def metadata_aware_retrieve(query: str, k: int = 15):
+def metadata_aware_retrieve(query: str, k: int = AI_MAX_RETRIEVAL_CHUNKS, authorized_user_id: str | None = None):
+    if not isinstance(query, str) or not query.strip():
+        return []
+    k = max(1, min(int(k), AI_MAX_RETRIEVAL_CHUNKS))
     print(f"\n[1] المريض سأل: {query}")
     if vectorstore is None:
         print("[!] خطأ: لا توجد قاعدة بيانات للبحث فيها!")
@@ -50,7 +55,19 @@ def metadata_aware_retrieve(query: str, k: int = 15):
     docs = vectorstore.similarity_search(query, k=k)
     print(f"[2] تم سحب {len(docs)} فقرة من قاعدة البيانات مبدئياً.")
     
-    retrieved_chunks = [{"text": doc.page_content, "metadata": doc.metadata} for doc in docs]
+    retrieved_chunks = []
+    for doc in docs:
+        metadata = doc.metadata if isinstance(doc.metadata, dict) else {}
+        owner_id = metadata.get("owner_id")
+        allowed_users = metadata.get("allowed_user_ids")
+        if owner_id and str(owner_id) != str(authorized_user_id):
+            continue
+        if allowed_users is not None:
+            if not isinstance(allowed_users, (list, tuple, set)) or str(authorized_user_id) not in {str(value) for value in allowed_users}:
+                continue
+        if metadata.get("visibility") == "private" and not owner_id and allowed_users is None:
+            continue
+        retrieved_chunks.append({"text": str(doc.page_content)[:AI_MAX_CONTEXT_CHARS], "metadata": metadata})
     
     condition = extract_condition_from_query(query)
     if not condition:
@@ -74,7 +91,9 @@ def rerank_evidence(query: str, retrieved_chunks: list, top_k: int = 3):
     if not retrieved_chunks:
         return []
         
-    pairs = [[query, chunk["text"]] for chunk in retrieved_chunks]
+    top_k = max(1, min(int(top_k), 5))
+    retrieved_chunks = retrieved_chunks[:AI_MAX_RETRIEVAL_CHUNKS]
+    pairs = [[query[:10000], str(chunk.get("text", ""))[:100000]] for chunk in retrieved_chunks]
     inputs = tokenizer_rerank(pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
     
     with torch.no_grad():

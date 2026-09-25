@@ -8,10 +8,18 @@ import { MedicalServices } from "./pages/MedicalServices"; // 👈 استيرا�
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, PhoneCall, ShieldAlert, X } from "lucide-react";
 import { AuroraBackground } from "./components/AuroraBackground";
+import { AuthProvider, useAuth } from "./auth";
+import { AuthPage } from "./auth/pages/AuthPage";
 
 // ملاحظة: تأكد إنك نقلت ملف MedicalServices.tsx جوه فولدر pages عشان الاستيراد ده يشتغل
 
 export default function App() {
+  return <AuthProvider><AppContent /></AuthProvider>;
+}
+
+function AppContent() {
+  const { user, isLoading: loading, status } = useAuth();
+  const mfaRequired = false; // Temporary placeholder as MFA is not yet implemented in AuthContextValue
   // وسعنا نوع الـ Page (لو الـ TypeScript جاب خطأ هنا هنعدلها في الخطوة التانية)
   const [page, setPage] = useState<Page | "services">("home");
   const [initialPrompt, setInitialPrompt] = useState<string>();
@@ -205,7 +213,7 @@ export default function App() {
             className="flex-1 flex flex-col"
           >
             {page === "home" && <HomePage startChat={startChat} />}
-            {page === "chat" && <ChatPage initialPrompt={initialPrompt} />}
+            {page === "chat" && (loading ? <div className="flex flex-1 items-center justify-center">Loading secure session...</div> : user && !mfaRequired ? <ChatPage initialPrompt={initialPrompt} /> : <AuthPage path="/login" />)}
             {page === "sources" && <SourcesPage />}
             {page === "safety" && <SafetyPage />}
             {/* 👈 الصفحة الرابعة أضيفت هنا */}
