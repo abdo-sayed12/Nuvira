@@ -202,15 +202,18 @@ function AppContent() {
       <TopNav page={page as any} setPage={setPage as any} />
 
       {/* محتوى الصفحات مع انتقالات حركية سلسة للغاية (Page Transitions) */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ perspective: "1500px" }}>
         <AnimatePresence mode="wait">
           <motion.main
             key={page}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="flex-1 flex flex-col"
+            initial={{ opacity: 0, rotateY: 10, scale: 0.95, x: 30, z: -100 }}
+            animate={{ opacity: 1, rotateY: 0, scale: 1, x: 0, z: 0 }}
+            exit={{ opacity: 0, rotateY: -10, scale: 0.95, x: -30, z: -100 }}
+            transition={{ 
+              duration: 0.45, 
+              ease: [0.16, 1, 0.3, 1] 
+            }}
+            className="flex-1 flex flex-col origin-center will-change-transform"
           >
             {page === "home" && <HomePage startChat={startChat} />}
             {page === "chat" && (loading ? <div className="flex flex-1 items-center justify-center">Loading secure session...</div> : user && !mfaRequired ? <ChatPage initialPrompt={initialPrompt} /> : <AuthPage path="/login" />)}
