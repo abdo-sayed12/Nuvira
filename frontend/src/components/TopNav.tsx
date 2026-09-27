@@ -1,4 +1,4 @@
-import { Menu, X, Sun, Moon } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { BrandMark } from "./BrandMark";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,17 +24,17 @@ const languages = [
 // قاموس الترجمة الخاص بالشريط العلوي 🌍
 // ==========================================
 const navTranslations: Record<string, any> = {
-  ar: { home: "الرئيسية", sources: "المصادر", safety: "الأمان", services: "الخدمات الطبية", startChat: "ابدأ المحادثة", darkMode: "الوضع الداكن", lightMode: "الوضع الفاتح", theme: "المظهر", language: "اللغة" },
-  en: { home: "Home", sources: "Sources", safety: "Safety", services: "Medical Services", startChat: "Start chat", darkMode: "Dark Mode", lightMode: "Light Mode", theme: "Theme", language: "Language" },
-  fr: { home: "Accueil", sources: "Sources", safety: "Sécurité", services: "Services Médicaux", startChat: "Démarrer le chat", darkMode: "Mode Sombre", lightMode: "Mode Clair", theme: "Thème", language: "Langue" },
-  de: { home: "Startseite", sources: "Quellen", safety: "Sicherheit", services: "Medizinische Dienste", startChat: "Chat starten", darkMode: "Dunkelmodus", lightMode: "Heller Modus", theme: "Design", language: "Sprache" },
-  es: { home: "Inicio", sources: "Fuentes", safety: "Seguridad", services: "Servicios Médicos", startChat: "Iniciar chat", darkMode: "Modo Oscuro", lightMode: "Modo Claro", theme: "Tema", language: "Idioma" },
-  it: { home: "Home", sources: "Fonti", safety: "Sicurezza", services: "Servizi Medici", startChat: "Inizia chat", darkMode: "Modalità Scura", lightMode: "Modalità Chiara", theme: "Tema", language: "Lingua" },
-  ru: { home: "Главная", sources: "Источники", safety: "Безопасность", services: "Мед. услуги", startChat: "Начать чат", darkMode: "Темный", lightMode: "Светлый", theme: "Тема", language: "Язык" },
-  zh: { home: "首页", sources: "来源", safety: "安全", services: "医疗服务", startChat: "开始聊天", darkMode: "深色模式", lightMode: "浅色模式", theme: "主题", language: "语言" },
-  ja: { home: "ホーム", sources: "ソース", safety: "安全性", services: "医療サービス", startChat: "チャット開始", darkMode: "ダーク", lightMode: "ライト", theme: "テーマ", language: "言語" },
-  ko: { home: "홈", sources: "출처", safety: "안전", services: "의료 서비스", startChat: "채팅 시작", darkMode: "다크 모드", lightMode: "라이트 모드", theme: "테마", language: "언어" },
-  tr: { home: "Ana Sayfa", sources: "Kaynaklar", safety: "Güvenlik", services: "Tıbbi Hizmetler", startChat: "Sohbete başla", darkMode: "Karanlık Mod", lightMode: "Aydınlık Mod", theme: "Tema", language: "Dil" }
+  ar: { home: "الرئيسية", sources: "المصادر", safety: "الأمان", services: "الخدمات الطبية", startChat: "ابدأ المحادثة", language: "اللغة" },
+  en: { home: "Home", sources: "Sources", safety: "Safety", services: "Medical Services", startChat: "Start chat", language: "Language" },
+  fr: { home: "Accueil", sources: "Sources", safety: "Sécurité", services: "Services Médicaux", startChat: "Démarrer le chat", language: "Langue" },
+  de: { home: "Startseite", sources: "Quellen", safety: "Sicherheit", services: "Medizinische Dienste", startChat: "Chat starten", language: "Sprache" },
+  es: { home: "Inicio", sources: "Fuentes", safety: "Seguridad", services: "Servicios Médicos", startChat: "Iniciar chat", language: "Idioma" },
+  it: { home: "Home", sources: "Fonti", safety: "Sicurezza", services: "Servizi Medici", startChat: "Inizia chat", language: "Lingua" },
+  ru: { home: "Главная", sources: "Источники", safety: "Безопасность", services: "Мед. услуги", startChat: "Начать чат", language: "Язык" },
+  zh: { home: "首页", sources: "来源", safety: "安全", services: "医疗服务", startChat: "开始聊天", language: "语言" },
+  ja: { home: "ホーム", sources: "ソース", safety: "安全性", services: "医療サービス", startChat: "チャット開始", language: "言語" },
+  ko: { home: "홈", sources: "출처", safety: "안전", services: "의료 서비스", startChat: "채팅 시작", language: "언어" },
+  tr: { home: "Ana Sayfa", sources: "Kaynaklar", safety: "Güvenlik", services: "Tıbbi Hizmetler", startChat: "Sohbete başla", language: "Dil" }
 };
 
 export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) => void }) {
@@ -42,31 +42,12 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
   const [open, setOpen] = useState(false);
   
   // ==========================================
-  // 1. إعدادات الـ Dark Mode
+  // 1. تفعيل الوضع الداكن دائماً
   // ==========================================
-  const [isDark, setIsDark] = useState(false);
-  
   useEffect(() => {
-    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-      setIsDark(true);
-    } else {
-      document.documentElement.classList.remove('dark');
-      setIsDark(false);
-    }
+    document.documentElement.classList.add('dark');
+    localStorage.theme = 'dark';
   }, []);
-
-  const toggleTheme = () => {
-    if (isDark) {
-      document.documentElement.classList.remove('dark');
-      localStorage.theme = 'light';
-      setIsDark(false);
-    } else {
-      document.documentElement.classList.add('dark');
-      localStorage.theme = 'dark';
-      setIsDark(true);
-    }
-  };
 
   // ==========================================
   // 2. إعدادات اللغات (مع الحفظ والاسترجاع من LocalStorage)
@@ -197,18 +178,6 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
               </AnimatePresence>
             </div>
 
-            {/* زر الـ Dark Mode 🌓 */}
-            <div 
-              className="flex flex-col items-center justify-center cursor-pointer group"
-              onClick={toggleTheme}
-            >
-              <div className="p-1.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 group-hover:border-teal-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-all duration-200">
-                {isDark ? <Moon size={16} /> : <Sun size={16} />}
-              </div>
-              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                {isDark ? t.darkMode : t.lightMode}
-              </span>
-            </div>
           </div>
 
           <button onClick={() => go("chat")} className="button-primary hidden md:block py-2.5">
@@ -243,12 +212,6 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t.language}</span>
               </button>
               
-              <button onClick={toggleTheme} className="flex flex-col items-center gap-1">
-                <div className="p-1.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
-                  {isDark ? <Moon size={16} /> : <Sun size={16} />}
-                </div>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t.theme}</span>
-              </button>
             </div>
 
             {langMenuOpen && (
