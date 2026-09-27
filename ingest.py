@@ -3,9 +3,11 @@ from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from backend.config import PROCESSED_DATA_DIR
 
-PDF_FOLDER = "data/pdfs"
-DB_PATH = "data/process/my_rag"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PDF_FOLDER = os.path.join(BASE_DIR, "data", "pdfs")
+DB_PATH = os.path.join(PROCESSED_DATA_DIR, "my_rag")
 
 print("1. بدأ تحميل ملفات الـ PDF...")
 loader = PyPDFDirectoryLoader(PDF_FOLDER)

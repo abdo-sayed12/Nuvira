@@ -245,6 +245,10 @@ export function useSpeech({
   const [speakingId, setSpeakingId] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const abortAudioQueueRef = useRef(false);
+  const speakingIdRef = useRef<string | null>(null);
+  
   const baseTextRef = useRef("");
   const userEditedRef = useRef(false);
 
@@ -373,38 +377,74 @@ export function useSpeech({
      ============================================================== */
 
   async function toggleSpeech(id: string, text: string) {
-    /*
-     * Stop current speech.
-     */
     if (speakingId === id) {
       window.speechSynthesis.cancel();
+      abortAudioQueueRef.current = true;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       setSpeakingId(null);
+      speakingIdRef.current = null;
       return;
     }
 
-    /*
-     * Stop anything else currently speaking.
-     */
     window.speechSynthesis.cancel();
-    setSpeakingId(null);
+    abortAudioQueueRef.current = true;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
+    setSpeakingId(id);
+    speakingIdRef.current = id;
 
-    /*
-     * Create a speech-only copy.
-     *
-     * The original message shown on screen
-     * remains completely untouched.
-     */
     const cleanText = cleanTextForSpeech(text);
 
     if (!cleanText) {
       setError("No readable text is available for speech.");
+      setSpeakingId(null);
+      speakingIdRef.current = null;
       return;
     }
 
-    /*
-     * Determine the actual language
-     * of the answer.
-     */
+    abortAudioQueueRef.current = false;
+
+    try {
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cleanText }),
+      });
+
+      if (!response.ok) throw new Error("Backend TTS failed");
+
+      const audioBlob = await response.blob();
+      if (abortAudioQueueRef.current || speakingIdRef.current !== id) return;
+
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        setSpeakingId(null);
+        speakingIdRef.current = null;
+      };
+      
+      audio.onerror = () => {
+        URL.revokeObjectURL(audioUrl);
+        setSpeakingId(null);
+        speakingIdRef.current = null;
+      };
+
+      await audio.play();
+      return;
+    } catch (e) {
+      console.warn("Backend TTS failed, falling back to browser speech synthesis", e);
+    }
+
+    // 2. Fallback to Browser Native TTS
     const targetLangCode = getSpeechLanguage(cleanText, lang);
 
     try {
@@ -451,15 +491,22 @@ export function useSpeech({
 
       utterance.onstart = () => {
         setSpeakingId(id);
+        speakingIdRef.current = id;
       };
 
       utterance.onend = () => {
-        setSpeakingId(null);
+        setSpeakingId((current) => {
+          if (current === id) speakingIdRef.current = null;
+          return current === id ? null : current;
+        });
       };
 
       utterance.onerror = (event) => {
-        console.error("CARE360 TTS Error:", event);
-        setSpeakingId(null);
+        console.error("Nuvira TTS Error:", event);
+        setSpeakingId((current) => {
+          if (current === id) speakingIdRef.current = null;
+          return current === id ? null : current;
+        });
       };
 
       /*
@@ -470,12 +517,12 @@ export function useSpeech({
         try {
           window.speechSynthesis.speak(utterance);
         } catch (speechError) {
-          console.error("CARE360 Speech Start Error:", speechError);
+          console.error("Nuvira Speech Start Error:", speechError);
           setSpeakingId(null);
         }
       }, 50);
     } catch (ttsError) {
-      console.error("CARE360 TTS Initialization Error:", ttsError);
+      console.error("Nuvira TTS Initialization Error:", ttsError);
       setSpeakingId(null);
       setError("Voice playback is currently unavailable.");
     }

@@ -18,10 +18,12 @@ import type { useSpeech } from "../../hooks/useSpeech";
 import type { ChatMessage } from "../../types/api";
 import { formatSourceUrl, isArabic } from "../../utils/chatHelpers";
 
+import { useState, useEffect } from "react";
+
 /* ================================================================
    MARKDOWN-LITE RENDERING
    ----------------------------------------------------------------
-   Renders the lightweight markdown subset used by CARE360 answers:
+   Renders the lightweight markdown subset used by Nuvira answers:
    emoji-prefixed section headers, **bold**, "- " / "* " bullets,
    "1. " numbered lists, and blank-line spacing. This never uses
    dangerouslySetInnerHTML — every fragment is built from React
@@ -59,7 +61,7 @@ const renderFormattedMessage = (text: string) => {
       return (
         <div
           key={idx}
-          className="font-extrabold text-base mt-4 mb-2 text-teal-700 dark:text-teal-400 flex items-center gap-2 border-b border-teal-100 dark:border-slate-800 pb-1.5"
+          className="font-extrabold text-lg mt-6 mb-3 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-500 flex items-center gap-2 border-b border-white/10 pb-2 drop-shadow-md animate-fade-in-up"
         >
           {parseBold(line)}
         </div>
@@ -101,12 +103,90 @@ const renderFormattedMessage = (text: string) => {
     }
 
     return (
-      <p key={idx} className="my-1 leading-relaxed">
+      <p key={idx} className="my-1 leading-relaxed animate-fade-in-up">
         {parseBold(line)}
       </p>
     );
   });
 };
+
+/* ================================================================
+   Streaming / Typewriter Component
+   ================================================================ */
+
+// Global set so switching chats doesn't replay animations for seen messages
+const animatedMessages = new Set<string>();
+
+function StreamingMessageBody({
+  messageId,
+  fullText,
+  isUser,
+  isNewlyGenerated,
+}: {
+  messageId: string;
+  fullText: string;
+  isUser: boolean;
+  isNewlyGenerated?: boolean;
+}) {
+  const shouldAnimate = !isUser && isNewlyGenerated && !animatedMessages.has(messageId);
+  const [displayedText, setDisplayedText] = useState(shouldAnimate ? "" : fullText);
+  const [isFinished, setIsFinished] = useState(!shouldAnimate);
+
+  useEffect(() => {
+    if (!shouldAnimate) return;
+
+    let currentIndex = 0;
+    // Split by words but preserve all spacing
+    const words = fullText.match(/(\S+|\s+)/g) || [];
+
+    const timer = setInterval(() => {
+      currentIndex += 3; // words per tick (speeding up slightly)
+      if (currentIndex >= words.length) {
+        setDisplayedText(fullText);
+        setIsFinished(true);
+        animatedMessages.add(messageId);
+        clearInterval(timer);
+      } else {
+        setDisplayedText(words.slice(0, currentIndex).join(""));
+        // Smooth scroll if near bottom
+        const scroller = document.getElementById('messages-container');
+        if (scroller) {
+           const isNearBottom = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 250;
+           if (isNearBottom) {
+              scroller.scrollTop = scroller.scrollHeight;
+           }
+        }
+      }
+    }, 20);
+
+    return () => {
+      clearInterval(timer);
+      setDisplayedText(fullText);
+      animatedMessages.add(messageId);
+    };
+  }, [fullText, messageId, shouldAnimate]);
+
+  return (
+    <div className="relative">
+      <div className="space-y-1">{renderFormattedMessage(displayedText)}</div>
+      {!isFinished && (
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={() => {
+              setDisplayedText(fullText);
+              setIsFinished(true);
+              animatedMessages.add(messageId);
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full text-xs font-medium text-slate-300 transition-colors border border-white/10 shadow-sm"
+          >
+            إظهار كامل النص
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 19 22 12 13 5 13 19"></polygon><polygon points="2 19 11 12 2 5 2 19"></polygon></svg>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ================================================================
    MessageBubble
@@ -149,7 +229,7 @@ export function MessageBubble({
       className={`group animate-zipper flex flex-col ${
         message.role === "user"
           ? "ml-auto rtl:mr-auto rtl:ml-0 items-end max-w-2xl"
-          : "max-w-3xl items-start"
+          : "w-full max-w-none items-start"
       }`}
     >
       <div
@@ -157,7 +237,7 @@ export function MessageBubble({
         className={
           message.role === "user"
             ? "select-none relative rounded-3xl rounded-br-sm rtl:rounded-br-3xl rtl:rounded-bl-sm bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 text-sm leading-relaxed text-white font-medium shadow-md shadow-teal-900/10 space-y-2 cursor-default"
-            : "rounded-3xl rounded-bl-sm rtl:rounded-bl-3xl rtl:rounded-br-sm border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 px-6 py-6 text-sm leading-relaxed text-slate-800 dark:text-slate-100 shadow-sm"
+            : "w-[98%] rounded-3xl rounded-bl-sm rtl:rounded-bl-3xl rtl:rounded-br-sm border border-emerald-500/20 bg-gradient-to-br from-[#0a101c]/80 via-[#0a101c]/60 to-[#0a101c]/80 backdrop-blur-2xl shadow-[0_0_30px_rgba(16,185,129,0.08)] px-7 py-6 text-sm leading-relaxed text-slate-100 relative overflow-hidden before:absolute before:inset-0 before:-z-10 before:bg-gradient-to-r before:from-emerald-500/5 before:via-cyan-500/5 before:to-violet-500/5 before:animate-pulse"
         }
       >
         {message.reply && message.reply.risk_level === "urgent" && (
@@ -195,14 +275,19 @@ export function MessageBubble({
                 }}
                 className="px-4 py-1.5 bg-teal-800 hover:bg-teal-900 shadow-sm rounded-lg text-xs font-bold transition"
               >
-                حفظ وإرسال
+                إرسال التعديل
               </button>
             </div>
           </div>
         ) : (
           <div className="font-sans space-y-1.5">
             {message.role === "assistant" ? (
-              renderFormattedMessage(message.body)
+              <StreamingMessageBody
+                messageId={message.id}
+                fullText={message.body}
+                isUser={false}
+                isNewlyGenerated={message.isNewlyGenerated}
+              />
             ) : (
               <div className="whitespace-pre-wrap">{message.body}</div>
             )}
@@ -237,20 +322,13 @@ export function MessageBubble({
         )}
       </div>
 
-      {/* USER CONTEXT MENU */}
-
       {message.role === "user" && !editingMessageId && (
-        <div
-          className={`mt-1 flex w-full px-2 ${
-            isArabic(message.body) ? "justify-start" : "justify-end"
-          }`}
-        >
+        <div className="mt-1 flex self-end rtl:self-start px-2">
           <div className="relative">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-
                 setContextMenuId(
                   contextMenuId === message.id ? null : message.id
                 );
@@ -264,10 +342,25 @@ export function MessageBubble({
             {contextMenuId === message.id && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className={`absolute top-full mt-2 bg-white dark:bg-slate-800 shadow-2xl rounded-xl border border-slate-200 dark:border-slate-600 flex flex-col overflow-hidden z-[100] text-slate-800 dark:text-slate-200 text-sm min-w-[160px] animate-cube-in ${
-                  isArabic(message.body) ? "left-0" : "right-0"
-                }`}
+                className="absolute top-full mt-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl shadow-2xl rounded-xl border border-slate-200/50 dark:border-slate-600/50 flex flex-col overflow-hidden z-[100] text-slate-800 dark:text-slate-200 text-sm min-w-[160px] animate-cube-in rtl:right-0 ltr:right-0 right-0"
               >
+                <button
+                  onClick={() => {
+                    void copy(message.id, message.body);
+                    setTimeout(() => setContextMenuId(null), 1000);
+                  }}
+                  className="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between gap-3 font-semibold transition"
+                >
+                  نسخ السؤال
+                  {copied === message.id ? (
+                    <Check size={15} className="text-emerald-600" />
+                  ) : (
+                    <Clipboard size={15} className="text-teal-600 dark:text-teal-400" />
+                  )}
+                </button>
+
+                <div className="h-px bg-slate-200/60 dark:bg-slate-700/60" />
+
                 <button
                   onClick={() => {
                     setContextMenuId(null);
@@ -276,34 +369,8 @@ export function MessageBubble({
                   }}
                   className="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between gap-3 font-semibold transition"
                 >
-                  تعديل
+                  تعديل السؤال
                   <Pencil size={15} className="text-teal-600 dark:text-teal-400" />
-                </button>
-
-                <div className="h-px bg-slate-100 dark:bg-slate-700/60" />
-
-                <button
-                  onClick={() => {
-                    void copy(message.id, message.body);
-                    setContextMenuId(null);
-                  }}
-                  className="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between gap-3 font-semibold transition"
-                >
-                  نسخ
-                  <Clipboard size={15} className="text-teal-600 dark:text-teal-400" />
-                </button>
-
-                <div className="h-px bg-slate-100 dark:bg-slate-700/60" />
-
-                <button
-                  onClick={() => {
-                    void handleShare(message.body);
-                    setContextMenuId(null);
-                  }}
-                  className="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between gap-3 font-semibold transition"
-                >
-                  مشاركة
-                  <Share2 size={15} className="text-teal-600 dark:text-teal-400" />
                 </button>
               </div>
             )}

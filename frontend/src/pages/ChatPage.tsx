@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { PanelLeft, Sparkles } from "lucide-react";
 
 import { ChatInputArea } from "../components/chat/ChatInputArea";
@@ -48,30 +48,48 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
 
   const { messages, loading, error, sidebarOpen, setSidebarOpen, t } = chat;
 
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messagesContainerRef.current && messages.length > 0 && messages[messages.length - 1].role === "user") {
+      messagesContainerRef.current.scrollTo({ top: messagesContainerRef.current.scrollHeight, behavior: "smooth" });
+    }
+  }, [messages.length]);
+
   return (
-    <main className="container-page py-6 sm:py-8">
-      <div className="surface flex min-h-[calc(100dvh-9rem)] overflow-hidden animate-cube-in bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200/80 dark:border-slate-800 transition-colors duration-300">
+    <main className="w-full" style={{ height: "calc(100vh - 88px)", maxHeight: "calc(100vh - 88px)", overflow: "hidden" }}>
+      <div className="flex h-full animate-cube-in">
         <ChatSidebar chat={chat} />
 
-        <section className="flex min-w-0 flex-1 flex-col bg-slate-50/30 dark:bg-slate-950 transition-colors duration-300">
+        <section 
+          className="flex min-w-0 flex-1 flex-col transition-colors duration-300 relative"
+          style={{
+            background: "rgba(10, 16, 28, 0.42)",
+            backdropFilter: "blur(22px)",
+            WebkitBackdropFilter: "blur(22px)",
+            borderLeft: "1px solid rgba(6, 182, 212, 0.18)",
+            overflow: "hidden",
+            boxShadow: "inset 1px 0 0 rgba(255,255,255,0.05)"
+          }}
+        >
           {/* HEADER */}
 
-          <header className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl px-6 py-4 sticky top-0 z-20 shadow-xs">
+          <header className="flex items-center justify-between border-b border-white/5 bg-transparent px-6 py-4 sticky top-0 z-20">
             <div className="flex items-center gap-3">
               <button
-                className="rounded-xl p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-teal-600 dark:text-teal-400 lg:hidden transition"
+                className="rounded-xl p-2.5 hover:bg-white/10 text-teal-400 lg:hidden transition"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
               >
                 <PanelLeft size={20} />
               </button>
 
               <div>
-                <h1 className="font-black text-xl tracking-tight bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 dark:from-teal-400 dark:to-emerald-300 bg-clip-text text-transparent flex items-center gap-2">
-                  <Sparkles size={20} className="text-teal-500 animate-pulse" />
+                <h1 className="font-black text-xl tracking-tight bg-gradient-to-r from-teal-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent flex items-center gap-2">
+                  <Sparkles size={20} className="text-teal-400 animate-pulse" />
                   {t.welcomeTitle}
                 </h1>
 
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs font-semibold text-slate-400 mt-0.5">
                   {t.welcomeSub}
                 </p>
               </div>
@@ -80,7 +98,12 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
 
           {/* MESSAGES */}
 
-          <div className="flex-1 space-y-6 overflow-y-auto p-5 pb-24 sm:p-8 sm:pb-8 custom-scrollbar relative">
+          <div 
+            id="messages-container"
+            ref={messagesContainerRef}
+            className="flex-1 space-y-6 overflow-y-auto p-5 sm:p-8 custom-scrollbar relative"
+            style={{ overscrollBehavior: "contain", scrollBehavior: "smooth" }}
+          >
             {messages.map((message, index) => (
               <MessageBubble
                 key={message.id}
@@ -95,14 +118,23 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
             {/* LOADING */}
 
             {loading && (
-              <div className="max-w-xs rounded-3xl rounded-bl-sm border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-4 shadow-sm animate-zipper">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-teal-500" />
-                  <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-teal-500 [animation-delay:150ms]" />
-                  <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-teal-500 [animation-delay:300ms]" />
-                  <span className="text-xs text-slate-400 font-medium ml-2">
-                    CARE360 is thinking...
-                  </span>
+              <div className="w-[98%] max-w-3xl rounded-3xl rounded-bl-sm rtl:rounded-bl-3xl rtl:rounded-br-sm border border-emerald-500/30 bg-gradient-to-r from-[#0a101c]/90 to-[#0a101c]/60 backdrop-blur-xl px-6 py-5 shadow-[0_0_20px_rgba(16,185,129,0.15)] animate-zipper relative overflow-hidden flex flex-col justify-center gap-3">
+                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-violet-500/10 animate-pulse" />
+                <div className="flex items-center gap-3">
+                   <div className="flex items-center justify-center relative w-8 h-8">
+                     <div className="absolute inset-0 rounded-full border-2 border-emerald-400/30 border-t-emerald-400 animate-spin" />
+                     <div className="absolute inset-1 rounded-full border-2 border-cyan-400/30 border-b-cyan-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+                   </div>
+                   <span className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 animate-pulse">
+                     Nuvira is analyzing...
+                   </span>
+                </div>
+                <div className="flex items-center gap-1 h-3 pl-11 rtl:pr-11 rtl:pl-0">
+                  <div className="h-full w-1 bg-emerald-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                  <div className="h-3/4 w-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:100ms]" />
+                  <div className="h-full w-1 bg-violet-400 rounded-full animate-bounce [animation-delay:200ms]" />
+                  <div className="h-1/2 w-1 bg-emerald-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                  <div className="h-5/6 w-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:400ms]" />
                 </div>
               </div>
             )}
@@ -110,7 +142,7 @@ export function ChatPage({ initialPrompt }: { initialPrompt?: string }) {
             {/* ERROR */}
 
             {error && (
-              <div className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-800 dark:text-red-300 animate-cube-in">
+              <div className="rounded-2xl border border-red-900/50 bg-red-900/20 p-4 text-sm text-red-300 animate-cube-in">
                 {error}
               </div>
             )}

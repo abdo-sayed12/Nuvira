@@ -133,7 +133,7 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
       <div className="container-page flex h-16 items-center justify-between">
         
         {/* اللوجو */}
-        <button aria-label="CARE360 home" onClick={() => go("home")}>
+        <button aria-label="Nuvira home" onClick={() => go("home")}>
           <BrandMark />
         </button>
 

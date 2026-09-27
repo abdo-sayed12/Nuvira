@@ -2,15 +2,41 @@
 venv/
 env/
 __pycache__/
-*.pyc
-*.pyv
+*.py[cod]
+*$py.class
+.pytest_cache/
 
-# Environment & Config Files (حماية المفاتيح السرية)
+# Node & Frontend
+node_modules/
+dist/
+build/
+.npm/
+
+# Environment, Secrets & Config Files (حماية المفاتيح السرية)
 .env
 .env.*
-*.bak
 .env.local
+*.bak
+*.pem
+*.key
+*.cert
 backend/config.py
+
+# HuggingFace & AI Models Cache (Very large - Must be ignored)
+.hf_cache/
+
+# Databases
+*.db
+*.sqlite3
+
+# OS & IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
 
 # Data files
 data/processed/*.index

@@ -34,6 +34,8 @@ export interface ChatMessage {
   role: "user" | "assistant";
   body: string;
   reply?: ChatReply;
+  timestamp?: string;
+  isNewlyGenerated?: boolean;
 }
 
 const API_BASE =

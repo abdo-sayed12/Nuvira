@@ -2,15 +2,16 @@ import os
 import asyncio
 import hashlib
 # ده السطر اللي بيمنع تحميل الموديل على السي ويقراه من الإي مباشرة
-os.environ["HF_HOME"] = "E:/huggingface_cache"
+os.environ["HF_HOME"] = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".hf_cache")
 
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException, Request, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field, ConfigDict
 from uuid import UUID
 import httpx
 import uvicorn
+import io
 
 from backend.retriever import metadata_aware_retrieve, rerank_evidence
 from backend.generator import generate_clinical_answer
@@ -68,6 +69,9 @@ async def readiness():
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
+    if request.url.path == "/api/auth/session" and request.method == "POST":
+        return await call_next(request)
+        
     scope = route_scope(request.url.path, request.method)
     ip = client_ip(request)
     try:
@@ -82,28 +86,36 @@ async def rate_limit_middleware(request: Request, call_next):
     return response
 
 
+from typing import Optional
+
 class SessionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    access_token: str = Field(min_length=20, max_length=8192)
-    refresh_token: str = Field(min_length=20, max_length=8192)
+    access_token: Optional[str] = Field(default=None)
+    refresh_token: Optional[str] = Field(default=None)
 
 
 @app.post("/api/auth/session")
 async def establish_session(request: SessionRequest):
+    if not request.access_token or not request.refresh_token:
+        return JSONResponse({"authenticated": False})
+    
+    try:
+        from backend.auth import _decode_token
+        _decode_token(request.access_token)
+    except Exception:
+        return JSONResponse({"authenticated": False})
+        
     response = JSONResponse({"authenticated": True})
-    # set_session_cookies validates the access token through the same dependency used by API routes.
-    from backend.auth import _decode_token
-    _decode_token(request.access_token)
     set_session_cookies(response, request.access_token, request.refresh_token)
     return response
 
 def set_session_cookies(response: Response, access_token: str, refresh_token: str):
-    """Set secure HTTP-only cookies for the session."""
+    """Set HTTP-only cookies for the session."""
     response.set_cookie(
         key="care360_access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=False,
         samesite="lax",
         path="/",
         max_age=3600 # 1 hour
@@ -112,7 +124,7 @@ def set_session_cookies(response: Response, access_token: str, refresh_token: st
         key="care360_refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=False,
         samesite="lax",
         path="/",
         max_age=60 * 60 * 24 * 7 # 7 days
@@ -131,7 +143,9 @@ async def refresh_session(request: Request):
                 json={"refresh_token": refresh_token},
             )
         if token_response.status_code >= 400:
-            raise HTTPException(status_code=401, detail="Session expired")
+            resp = JSONResponse({"authenticated": False}, status_code=401)
+            clear_session_cookies(resp)
+            return resp
         tokens = token_response.json()
         from backend.auth import _decode_token
         _decode_token(tokens["access_token"])
@@ -139,7 +153,9 @@ async def refresh_session(request: Request):
         set_session_cookies(response, tokens["access_token"], tokens["refresh_token"])
         return response
     except (httpx.HTTPError, KeyError, ValueError) as error:
-        raise HTTPException(status_code=401, detail="Session refresh failed") from error
+        resp = JSONResponse({"authenticated": False}, status_code=401)
+        clear_session_cookies(resp)
+        return resp
 
 
 @app.post("/api/auth/logout")
@@ -151,14 +167,14 @@ def clear_session_cookies(response: Response):
     response.delete_cookie(
         key="care360_access_token",
         path="/",
-        secure=True,
+        secure=False,
         httponly=True,
         samesite="lax"
     )
     response.delete_cookie(
         key="care360_refresh_token",
         path="/",
-        secure=True,
+        secure=False,
         httponly=True,
         samesite="lax"
     )
@@ -168,10 +184,19 @@ def clear_session_cookies(response: Response):
 async def session(user: dict = Depends(get_verified_user)):
     return {"authenticated": True, "user": {"id": user.user_id, "email": user.email}}
 
+from typing import Any
+
+class MessageHistory(BaseModel):
+    role: str
+    content: str
+    timestamp: str | None = None
+
 class QueryRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     message: str = Field(min_length=1, max_length=AI_MAX_QUERY_CHARS)
     conversation_id: UUID | None = None
+    history: Any = None
+    file_base64: str | None = None
 
 class SourceItem(BaseModel):
     section_name: str
@@ -186,6 +211,106 @@ class FeedbackRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     message_id: UUID
     feedback: str = Field(pattern="^(up|down)$")
+
+class TTSRequest(BaseModel):
+    text: str
+
+TTS_CACHE = {}
+
+@app.post("/api/tts")
+async def generate_tts(request: TTSRequest, user: UserIdentity = Depends(get_verified_user)):
+    text = request.text
+    import re
+    import hashlib
+    from fastapi.responses import StreamingResponse
+    from backend.config import GROQ_API_KEY
+    from groq import AsyncGroq
+    
+    # Exclude references section from TTS
+    if "المراجع الطبية الداعمة" in text:
+        text = text.split("المراجع الطبية الداعمة")[0]
+        
+    # Fast initial cleanup
+    text = re.sub(r'(\*\*|##|\*|__|_|~|`|\||-{3,})', '', text)
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    # Remove structural headers and lists aggressively
+    text = re.sub(r'^(التقييم الأولي|التحليل الطبي والأسباب المحتملة|الإرشادات|المراجع|Initial Assessment|Medical Analysis|Recommendations|References).*$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^#{1,6}\s*', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^[\s]*[-*•◦▪▫]\s*', '', text, flags=re.MULTILINE)
+    text = re.sub(r'https?:\/\/[^\s]+', '', text)
+    text = re.sub(r'[\U00010000-\U0010ffff]', '', text)
+    text = text.replace('🩺', '').replace('💡', '').replace('🚩', '').replace('📋', '').replace('👨‍⚕️', '').replace('📚', '')
+    text = text.replace('\n', ' ').strip()
+    
+    if not text:
+        return Response(content=b"", media_type="audio/mpeg")
+    
+    try:
+        from langdetect import detect
+        lang = detect(text)
+    except Exception:
+        lang = 'en'
+        
+    base_lang = lang.split('-')[0]
+    
+    # Groq Processing for Arabic (Diacritization and Conversational tone)
+    if base_lang == 'ar' and GROQ_API_KEY:
+        try:
+            groq_client = AsyncGroq(api_key=GROQ_API_KEY)
+            prompt = (
+                "حول هذا النص الطبي إلى حديث طبيب بشري متصل بالعامية المصرية الراقية والمريحة. "
+                "احذف أي بقايا عناوين رسمية، واضبط التشكيل الصوتي للكلمات العامية (مثل وَجَعَك، ضَهْرَك) ليقرأها محرك الصوت كنطق إنساني طبيعي 100%. "
+                "استبدل النقاط الفاصلة بأدوات ربط طبيعية (مثل 'وكمان' أو 'عشان كده'). أخرج النص فقط دون أي تعليقات أو مقدمات:\n\n"
+                f"{text}"
+            )
+            response = await groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.0,
+                max_tokens=1024,
+                timeout=10.0
+            )
+            text = response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"Groq TTS processing failed: {e}")
+
+    voice_map = {
+        'ar': 'ar-EG-SalmaNeural',
+        'en': 'en-US-AriaNeural',
+        'es': 'es-ES-ElviraNeural',
+        'de': 'de-DE-KatjaNeural',
+        'fr': 'fr-FR-DeniseNeural',
+        'it': 'it-IT-ElsaNeural',
+        'zh-cn': 'zh-CN-XiaoxiaoNeural',
+        'ru': 'ru-RU-SvetlanaNeural'
+    }
+    
+    voice = voice_map.get(base_lang, 'en-US-AriaNeural')
+    rate = "+5%" if base_lang == 'ar' else "+0%"
+    pitch = "-2Hz" if base_lang == 'ar' else "+0Hz"
+    
+    cache_key = hashlib.md5(f"{voice}:{rate}:{pitch}:{text}".encode()).hexdigest()
+    if cache_key in TTS_CACHE:
+        return Response(content=TTS_CACHE[cache_key], media_type="audio/mpeg")
+    
+    import edge_tts
+    
+    async def audio_stream():
+        communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
+        audio_data = b""
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_data += chunk["data"]
+                yield chunk["data"]
+                
+        # Cache after completion
+        if len(TTS_CACHE) > 1000:
+            TTS_CACHE.clear()
+        TTS_CACHE[cache_key] = audio_data
+
+    return StreamingResponse(audio_stream(), media_type="audio/mpeg")
+
+
 
 @app.post("/api/chat", response_model=QueryResponse)
 async def chat_endpoint(
@@ -216,16 +341,80 @@ async def chat_endpoint(
             raise HTTPException(status_code=429, detail="The clinical assistant is busy. Please try again shortly.")
 
         try:
+            # Handle file attachments (PDFs or Images)
+            pdf_text = ""
+            final_file_base64 = query_request.file_base64
+            
+            if final_file_base64:
+                if final_file_base64.startswith("data:application/pdf;base64,"):
+                    import base64
+                    import pypdf
+                    import io
+                    
+                    b64_data = final_file_base64.split(",", 1)[-1]
+                    pdf_bytes = base64.b64decode(b64_data)
+                    
+                    try:
+                        reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+                        extracted_text = []
+                        for page in reader.pages:
+                            text = page.extract_text()
+                            if text:
+                                extracted_text.append(text)
+                        pdf_text = "\n".join(extracted_text)
+                    except Exception as e:
+                        print("Error extracting PDF:", e)
+                    
+                    # We extracted text, so we don't send the PDF as an image to Groq
+                    final_file_base64 = None
+
+            # Merge PDF text into the message
+            final_message = query_request.message
+            if pdf_text:
+                final_message += f"\n\n[ATTACHED MEDICAL DOCUMENT (PDF)]:\n{pdf_text}"
+
+            clean_history = []
+            if query_request.history and isinstance(query_request.history, list):
+                for msg in query_request.history:
+                    try:
+                        role = ""
+                        content = ""
+                        if hasattr(msg, "role"):
+                            role = str(getattr(msg, "role", "")).lower()
+                            content = str(getattr(msg, "content", "")).strip()
+                        elif isinstance(msg, dict):
+                            role = str(msg.get("role", "")).lower()
+                            content = str(msg.get("content", "")).strip()
+                        
+                        if not content or "Welcome to Nuvira" in content:
+                            continue
+                        
+                        if role not in ["user", "assistant"]:
+                            role = "user"
+                            
+                        clean_history.append({"role": role, "content": content})
+                    except Exception:
+                        continue
+
+            search_query_context = final_message
+            if len(clean_history) >= 2:
+                last_user = clean_history[-2]["content"]
+                last_asst = clean_history[-1]["content"]
+                search_query_context = f"Previous Context: {last_user} -> {last_asst}\n\nCurrent Complaint: {final_message}"
+
+            from backend.generator import translate_to_english_medical_query
+            english_query = await asyncio.to_thread(translate_to_english_medical_query, search_query_context)
+            
             retrieved_chunks = await asyncio.wait_for(
-                asyncio.to_thread(metadata_aware_retrieve, query_request.message, 3, user.user_id),
+                asyncio.to_thread(metadata_aware_retrieve, english_query, 3, user.user_id),
                 timeout=AI_PROVIDER_TIMEOUT_SECONDS,
             )
             top_chunks = await asyncio.wait_for(
-                asyncio.to_thread(rerank_evidence, query_request.message, retrieved_chunks, 3),
+                asyncio.to_thread(rerank_evidence, english_query, retrieved_chunks, 3),
                 timeout=AI_PROVIDER_TIMEOUT_SECONDS,
             )
             answer = await asyncio.wait_for(
-                asyncio.to_thread(generate_clinical_answer, query_request.message, top_chunks),
+                asyncio.to_thread(generate_clinical_answer, final_message, top_chunks, final_file_base64, clean_history),
                 timeout=AI_PROVIDER_TIMEOUT_SECONDS,
             )
         finally:

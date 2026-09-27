@@ -29,16 +29,37 @@ export interface ChatMessage {
   body: string;
   reply?: ChatReply;
   fileName?: string;
+  timestamp?: string;
 }
 
-const API_BASE = (import.meta as any).env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api";
+const API_BASE = (import.meta as any).env.VITE_API_BASE_URL ?? "/api";
+
+import { supabase } from '../auth/lib/supabase';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, { ...init, credentials: "include", headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
+  let authHeaders: Record<string, string> = {};
+  const { data } = await supabase.auth.getSession();
+  if (data.session?.access_token) {
+    authHeaders["Authorization"] = `Bearer ${data.session.access_token}`;
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, { 
+    ...init, 
+    credentials: "include", 
+    headers: { "Content-Type": "application/json", ...authHeaders, ...(init?.headers ?? {}) } 
+  });
+  
   if (response.status === 401 && path !== "/auth/refresh") {
     const refreshed = await fetch(`${API_BASE}/auth/refresh`, { method: "POST", credentials: "include" });
     if (refreshed.ok) return request<T>(path, init);
+    // Refresh failed, clear stale session data and retry once without auth headers
+    await supabase.auth.signOut();
+    return request<T>(path, {
+      ...init,
+      headers: { ...init?.headers, "Authorization": "" } // Remove stale header
+    });
   }
+  
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     throw new Error(body.detail || `Request failed (${response.status})`);
@@ -46,11 +67,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export interface MessageHistory {
+  role: "user" | "assistant";
+  content: string;
+  timestamp?: string;
+}
+
 export const api = {
-  chat: (message: string, conversation_id?: string, file_base64?: string) => 
+  chat: (message: string, conversation_id?: string, history?: MessageHistory[], signal?: AbortSignal, file_base64?: string) => 
     request<ChatReply>("/chat", { 
       method: "POST", 
-      body: JSON.stringify({ message, conversation_id, file_base64 }) 
+      body: JSON.stringify({ message, conversation_id, history, file_base64 }),
+      signal
     }),
   
   sources: () => request<Source[]>("/sources"),

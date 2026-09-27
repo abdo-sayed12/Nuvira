@@ -16,8 +16,7 @@ from backend.config import (
 DB_DIR = os.path.join(PROCESSED_DATA_DIR, "my_rag")
 
 print("\n" + "="*50)
-print(f"🔍 السيرفر بيبحث عن قاعدة البيانات (العقل) في المسار ده:")
-print(f"👉 {DB_DIR}")
+print(f"DB_DIR: {DB_DIR}")
 print("="*50 + "\n")
 
 # تجهيز الموديل
@@ -25,12 +24,12 @@ embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
 # تحميل قاعدة البيانات
 if os.path.exists(os.path.join(DB_DIR, "index.faiss")):
-    print("✅ ممتاز! تم العثور على ملفات قاعدة البيانات... جاري التحميل.")
+    print("Found index.faiss")
     vectorstore = FAISS.load_local(DB_DIR, embeddings, allow_dangerous_deserialization=True)
-    print(f"✅ تم تحميل العقل بنجاح! جاهز لاستقبال أسئلة المرضى.")
+    print(f"Loaded vectorstore")
 else:
     vectorstore = None
-    print("❌ مصيبة! السيرفر مش لاقي ملف index.faiss في المسار ده.")
+    print("No index.faiss found")
 
 tokenizer_rerank = AutoTokenizer.from_pretrained(RERANKER_MODEL_NAME)
 model_rerank = AutoModelForSequenceClassification.from_pretrained(RERANKER_MODEL_NAME)
@@ -47,13 +46,11 @@ def metadata_aware_retrieve(query: str, k: int = AI_MAX_RETRIEVAL_CHUNKS, author
     if not isinstance(query, str) or not query.strip():
         return []
     k = max(1, min(int(k), AI_MAX_RETRIEVAL_CHUNKS))
-    print(f"\n[1] المريض سأل: {query}")
+    
     if vectorstore is None:
-        print("[!] خطأ: لا توجد قاعدة بيانات للبحث فيها!")
         return []
         
     docs = vectorstore.similarity_search(query, k=k)
-    print(f"[2] تم سحب {len(docs)} فقرة من قاعدة البيانات مبدئياً.")
     
     retrieved_chunks = []
     for doc in docs:
@@ -67,11 +64,29 @@ def metadata_aware_retrieve(query: str, k: int = AI_MAX_RETRIEVAL_CHUNKS, author
                 continue
         if metadata.get("visibility") == "private" and not owner_id and allowed_users is None:
             continue
-        retrieved_chunks.append({"text": str(doc.page_content)[:AI_MAX_CONTEXT_CHARS], "metadata": metadata})
+        text_content = str(doc.page_content)[:AI_MAX_CONTEXT_CHARS]
+        
+        if not metadata.get("section_number") or not metadata.get("section_name"):
+            import re
+            # Match formats like "36   Prevention of cardiovascular disease" at the start of the chunk
+            match = re.match(r"^(\d+[\.\d]*)\s+([^\n]{3,60})\n", text_content)
+            if match:
+                if not metadata.get("section_number"):
+                    metadata["section_number"] = match.group(1)
+                if not metadata.get("section_name"):
+                    metadata["section_name"] = match.group(2).strip()
+            else:
+                # Fallback: maybe just a title without a number? Or a different format?
+                # For now, if we can't parse, we leave it, but try to grab the first line if it looks like a heading
+                first_line = text_content.split('\n')[0].strip()
+                if len(first_line) < 100 and not metadata.get("section_name"):
+                    metadata["section_name"] = first_line
+                    
+        retrieved_chunks.append({"text": text_content, "metadata": metadata})
     
     condition = extract_condition_from_query(query)
     if not condition:
-        print("[3] مفيش قسم طبي معين في السؤال، هيتم إرسال كل الفقرات.")
+        print("No condition found")
         return retrieved_chunks
         
     section_num = CONDITION_MAP[condition]
@@ -84,7 +99,7 @@ def metadata_aware_retrieve(query: str, k: int = AI_MAX_RETRIEVAL_CHUNKS, author
         elif str(chunk_section).startswith(section_num) or "general" in str(chunk_section).lower():
             filtered_chunks.append(chunk)
             
-    print(f"[3] بعد الفلترة الذكية، اتبقى {len(filtered_chunks)} فقرة.")
+    print(f"Filtered chunks: {len(filtered_chunks)}")
     return filtered_chunks
 
 def rerank_evidence(query: str, retrieved_chunks: list, top_k: int = 3):
@@ -101,5 +116,5 @@ def rerank_evidence(query: str, retrieved_chunks: list, top_k: int = 3):
         
     ranked_indices = torch.argsort(scores, descending=True).tolist()
     reranked_chunks = [retrieved_chunks[i] for i in ranked_indices[:top_k]]
-    print(f"[4] الرانكر اختار أدق {len(reranked_chunks)} فقرات وبعتهم يترد بيهم.")
+    print(f"Reranked chunks: {len(reranked_chunks)}")
     return reranked_chunks

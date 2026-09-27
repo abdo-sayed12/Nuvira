@@ -65,14 +65,16 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
           {
             id: "welcome",
             role: "assistant",
-            body: "Welcome to CARE360. I can share general health information grounded in the sources shown below each answer.",
+            body: "Welcome to Nuvira. I can share general health information grounded in the sources shown below each answer.",
+            isNewlyGenerated: false,
           },
         ]
       : [
           {
             id: "welcome",
             role: "assistant",
-            body: "Welcome to CARE360. Ask a health-information question. I will show the evidence I use.",
+            body: "Welcome to Nuvira. Ask a health-information question. I will show the evidence I use.",
+            isNewlyGenerated: false,
           },
         ]
   );
@@ -91,7 +93,7 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
   );
   const [editDraft, setEditDraft] = useState("");
 
-  const cancelRequestRef = useRef<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   /* ==============================================================
      CLOSE CONTEXT MENU
@@ -175,15 +177,18 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
      SEND MESSAGE
      ============================================================== */
 
-  async function send(value = draft, historyOverride?: typeof messages) {
+  async function send(value = draft, historyOverride?: typeof messages, fileBase64?: string) {
     const question = value.trim();
 
-    if (!question) return;
+    if (!question && !fileBase64) return;
     if (loading) return;
 
-    cancelRequestRef.current = false;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
-    const queryText = question;
+    const queryText = question || "Attached document";
 
     setDraft("");
     setError(undefined);
@@ -195,16 +200,29 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
       id: crypto.randomUUID(),
       role: "user" as const,
       body: queryText,
+      timestamp: new Date().toISOString()
     };
 
-    setMessages([...currentHistory, newUserMsg]);
+    const nextMessages = [...currentHistory, newUserMsg];
+    setMessages(nextMessages);
+
+    // Extract history payload
+    const historyPayload = currentHistory
+      .filter(m => m.id !== "welcome")
+      .map(m => ({
+        role: m.role,
+        content: m.body,
+        timestamp: m.timestamp || new Date().toISOString()
+      }));
 
     try {
-      const reply = await api.chat(queryText, conversationId);
-
-      if (cancelRequestRef.current) {
-        return;
-      }
+      const reply = await api.chat(
+        queryText, 
+        conversationId, 
+        historyPayload, 
+        abortControllerRef.current.signal,
+        fileBase64
+      );
 
       setConversationId(reply.conversation_id);
 
@@ -215,18 +233,21 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
           role: "assistant",
           body: reply.answer,
           reply,
+          timestamp: new Date().toISOString(),
+          isNewlyGenerated: true
         },
       ]);
-    } catch (caught) {
-      if (!cancelRequestRef.current) {
-        setError(
-          caught instanceof Error
-            ? caught.message
-            : "Error connecting to server."
-        );
+    } catch (caught: any) {
+      if (caught.name === "AbortError") {
+        return; // Ignore aborted requests silently
       }
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Error connecting to server."
+      );
     } finally {
-      if (!cancelRequestRef.current) {
+      if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
         setLoading(false);
       }
     }
@@ -237,7 +258,9 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
      ============================================================== */
 
   function stopGenerating() {
-    cancelRequestRef.current = true;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setLoading(false);
   }
 
@@ -246,6 +269,14 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
      ============================================================== */
 
   function newConversation() {
+    if (messages.length <= 1) return; // Prevent creating empty sessions if already empty
+    
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+
     onSessionChange?.();
 
     setCurrentSessionId(crypto.randomUUID());
@@ -255,6 +286,8 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
         id: crypto.randomUUID(),
         role: "assistant",
         body: "New conversation started. What would you like to learn about?",
+        timestamp: new Date().toISOString(),
+        isNewlyGenerated: false
       },
     ]);
 
@@ -268,10 +301,16 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
      ============================================================== */
 
   function loadSession(session: ChatSession) {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+
     onSessionChange?.();
 
     setCurrentSessionId(session.id);
-    setMessages(session.messages);
+    setMessages(session.messages.map(m => ({ ...m, isNewlyGenerated: false })));
     setConversationId(session.conversationId);
     setError(undefined);
     setSidebarOpen(false);
@@ -323,7 +362,7 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
   async function handleShare(text: string) {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "CARE360 Chat", text });
+        await navigator.share({ title: "Nuvira Chat", text });
       } catch (err) {
         console.error("Error sharing", err);
       }
@@ -365,7 +404,7 @@ export function useChat({ initialPrompt, onSessionChange }: UseChatParams) {
     send,
     submit,
     stopGenerating,
-    cancelRequestRef,
+    abortControllerRef,
 
     // sessions
     sessions,

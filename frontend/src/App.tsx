@@ -110,7 +110,7 @@ function AppContent() {
               </div>
               <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Medical Disclaimer</h2>
               <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
-                CARE360 provides AI-generated health information based on clinical evidence. It is <b className="text-slate-800 dark:text-slate-200">NOT</b> a substitute for a doctor. In case of an emergency, call your local medical services immediately.
+                Nuvira provides AI-generated health information based on clinical evidence. It is <b className="text-slate-800 dark:text-slate-200">NOT</b> a substitute for a doctor. In case of an emergency, call your local medical services immediately.
               </p>
               
               <div className="flex items-center justify-center gap-2 mb-6 text-sm text-slate-500">
@@ -206,10 +206,10 @@ function AppContent() {
         <AnimatePresence mode="wait">
           <motion.main
             key={page}
-            initial={{ opacity: 0, y: 12, scale: 0.995 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 0.995 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
             className="flex-1 flex flex-col"
           >
             {page === "home" && <HomePage startChat={startChat} />}
@@ -225,7 +225,7 @@ function AppContent() {
       {/* الفوتر الاحترافي */}
       <footer className="premium-footer mt-auto border-t border-white/10 bg-slate-950/70 py-8 shadow-sm transition-colors duration-300">
         <div className="container-page flex flex-col justify-between gap-4 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center">
-          <p>© {new Date().getFullYear()} CARE360 · Evidence-Grounded Health Intelligence System</p>
+          <p>© {new Date().getFullYear()} Nuvira · Evidence-Grounded Health Intelligence System</p>
           <p className="font-medium text-teal-400">Not a diagnostic service. For medical emergencies, contact local services immediately.</p>
         </div>
       </footer>
