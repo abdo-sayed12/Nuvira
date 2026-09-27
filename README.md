@@ -1,91 +1,87 @@
-🏥 CARE360 - Elite Clinical RAG System
-Care360 هو نظام ذكاء اصطناعي طبي متكامل وآمن (Privacy-first Clinical RAG System). يعمل بمثابة "استشاري طبي عالمي" يعتمد على بروتوكولات الرعاية الصحية (مثل مستندات منظمة الصحة العالمية WHO وغيرها). تم تصميم النظام للرد على الاستفسارات الطبية، تحليل الأشعة، وتقديم إرشادات رعاية منزلية دقيقة، مع الحفاظ على نبرة طبيب بشري متعاطف واحترافي.
+<div align="center">
+  <h1>🏥 Nuvira - Elite Clinical AI System</h1>
+  <p><strong>A Next-Generation, Privacy-First Medical AI Platform</strong></p>
+</div>
 
-🏗️ البنية التحتية والتقنيات (Architecture & Tech Stack)
-Vector Database: FAISS (CPU) - لتخزين واسترجاع البيانات بسرعة فائقة.
+---
 
-Embeddings Model: Qwen/Qwen3-Embedding-0.6B - لتحويل النصوص لفهم دلالي عميق.
+**Nuvira** (formerly Care360) is an elite, fully-integrated, and highly secure AI medical ecosystem. Acting as a "World-Class Medical Consultant," Nuvira is built on robust healthcare protocols (like WHO guidelines). It analyzes medical imaging, provides pinpoint accurate home-care guidance, and diagnoses complex cases—all while maintaining the warm, deeply empathetic, and natural tone of a senior human physician.
 
-Reranker Model: BAAI/bge-reranker-base - لإعادة ترتيب النتائج الطبية وضمان أعلى دقة.
+## 🏗️ Architecture & Tech Stack
 
-LLM & Vision Engine:
+- **Authentication & Security:** Supabase (JWT validation, RLS, IDOR-protected endpoints).
+- **Vector Database (RAG):** FAISS (CPU) - Ultra-fast vector retrieval.
+- **Embeddings Model:** Qwen/Qwen3-Embedding-0.6B - For deep semantic document understanding.
+- **Reranker Model:** BAAI/bge-reranker-base - Guaranteeing the highest precision in medical context retrieval.
+- **LLM & Vision Engine:** Powered by **Groq API** (`openai/gpt-oss-120b` or Qwen 3.6 Vision equivalents) for lightning-fast multimodal reasoning and natural language generation.
+- **Backend Framework:** FastAPI (Python) - Asynchronous, rate-limited, and highly scalable.
+- **Frontend Framework:** React.js (Vite, TypeScript, Tailwind CSS) - Glassmorphism UI with smooth animations.
 
-السحابة (Groq API): استخدام نموذج qwen/qwen3.6-27b فائق السرعة لدعم الرؤية (تحليل الأشعة) والنصوص.
+## 📂 Project Structure
 
-محلياً (Local Fallback): Qwen/Qwen2.5-3B-Instruct.
+- `data/`: Contains raw PDFs and processed vector indices (FAISS & chunk data).
+- `backend/`: FastAPI server, Supabase Auth middleware, RAG retrieval logic, and the intelligent LLM generator pipeline.
+- `frontend/`: The interactive, multi-lingual React application.
+- `tests/`: Comprehensive security test suites (IDOR, Auth Boundary).
 
-Backend Framework: FastAPI / Python.
+## ✨ Key Features
 
-Frontend Framework: React.js (Vite, TypeScript, Tailwind CSS).
+### 🧠 1. The "Genius" AI Engine (Clinical Persona)
+- **Chameleon Linguistic Mirroring:** The AI dynamically detects the user's dialect (e.g., Egyptian Colloquial vs. Modern Standard Arabic) and mirrors it flawlessly, removing all robotic stiffness and speaking like a highly empathetic, senior consultant doctor.
+- **Global Medical Sourcing:** Instead of quoting raw filenames, Nuvira elegantly attributes clinical evidence to world-renowned institutions (WHO, AHA, ADA) in a structured, professional `### 📚 المراجع الطبية الداعمة` section.
+- **Multimodal Medical Vision:** Seamlessly upload X-rays, lab results, or skin condition images for instant, deep programmatic analysis.
 
-📂 هيكل المشروع (Project Structure)
-data/: يحتوي على ملفات الـ PDFs الخام والمؤشرات المعالجة (FAISS indices & chunks).
+### 💻 2. Immersive Frontend UI/UX
+- **Instant Progressive TTS:** Click the speaker icon to hear the doctor's response spoken aloud. Nuvira uses streaming chunking to start audio playback instantly.
+- **11 Global Languages:** Instant dynamic translation of the entire UI with automatic RTL/LTR direction switching and user preference persistence.
+- **Geo-IP Emergency System:** Detects the patient's country and automatically displays the correct local emergency hotline (e.g., 997 for Saudi Arabia, 123 for Egypt).
+- **Inline Message Editing:** Users can edit their previous messages inline (like ChatGPT), instantly truncating the conversation history and generating a new accurate response.
 
-backend/: يحتوي على خادم FastAPI، منطق الاسترجاع (Retrieval Logic)، ومولد الإجابات (Generator).
+### 🛡️ 3. Enterprise-Grade Security
+- **Supabase Authentication:** Complete JWT validation middleware strictly verifying every API request.
+- **IDOR & Boundary Protection:** Users can only access their own sessions and data. Robust defensive programming ensures complete isolation.
+- **Strict Gitignore:** Total protection of `.env`, `backend/config.py`, `.hf_cache`, and `node_modules` to prevent secret leaks and repository bloat.
 
-frontend/: يحتوي على واجهة المستخدم التفاعلية المبنية بـ React.
+### 💼 4. Business Model & Monetization
+Nuvira is not just a chatbot; it's a **Ready-to-Launch Startup**:
+- **Medical Marketplace:** A dedicated services screen allowing patients to browse top labs, scan centers, and clinics, and book them directly.
+- **Concierge MVP Model:** Minimal operational cost startup model where booking requests are routed via WhatsApp for human confirmation and payment.
+- **Dynamic Markup Commission:** An intelligent algorithm automatically reads the base medical service price, adds the platform's commission (`APP_COMMISSION`), and displays the final transparent price to the patient.
+- **Investor Pitch Simulation:** A specialized interactive window built for investors and judges. Clicking "Book" triggers a breakdown of the "Capital Cycle" and profit distribution (Platform % vs. Provider %), proving the immediate readiness of the commercial model.
 
-✨ المميزات الرئيسية للنظام (Key Features)
-🧠 1. محرك الذكاء الاصطناعي (AI Engine)
-المستشار الطبي النخبة (Elite Persona): تمت هندسة الأوامر (Prompt Engineering) ليتقمص الذكاء الاصطناعي شخصية طبيب استشاري كبير (بلمسة تعاطف مثل: "ألف سلامة عليك")، مما يمنع النظام من التحدث كـ "روبوت".
+## 🚀 Getting Started
 
-نظام المصادر الذكي (Smart Global Sourcing): يعتمد النظام على ذكاء الاستنتاج لربط الإجابة الطبية بكبرى المؤسسات الصحية العالمية (مثل: WHO, AHA, ADA) بدلاً من عرض أسماء ملفات خام، مما يعطي موثوقية عالمية.
+### 1. Environment Variables
+Create a `.env` file in the root directory (never committed) with your keys:
+```env
+GROQ_API_KEY=gsk_...
+SUPABASE_URL=https://...
+SUPABASE_ANON_KEY=...
+SUPABASE_JWT_SECRET=...
+```
 
-تحليل الصور والأشعة الطبية (Multimodal Vision): يدعم النظام رفع الصور (أشعة، طفح جلدي) وتحليلها برمجياً.
-
-المعالجة الفورية للمستندات (On-the-fly Parsing): قدرة فائقة على استلام ملفات الـ PDF/TXT وقراءتها ودمجها لحظياً في السياق الطبي.
-
-💻 2. واجهة المستخدم التفاعلية (Frontend UI)
-نظام الطوارئ الديناميكي (Geo-IP Emergency System): ميزة أمان فائقة تقوم باكتشاف الموقع الجغرافي للمستخدم وتغيير رقم بطاقة الطوارئ والإسعاف تلقائياً ليتناسب مع دولته (مثل: 123 في مصر، 997 في السعودية).
-
-دعم عالمي متعدد اللغات (11 Global Languages): ترجمة ديناميكية فورية لواجهة التطبيق بالكامل (عربي، إنجليزي، فرنسي، ياباني، إلخ) مع التبديل التلقائي لاتجاه الصفحة (RTL/LTR) وحفظ تفضيلات المستخدم.
-
-إدارة الجلسات الذكية (Session Management): حفظ سجل المحادثات تلقائياً مع عنونة كل جلسة (Title) بناءً على أول سؤال يطرحه المريض.
-
-قائمة الخيارات المصغرة (Context Menu): إمكانية (تعديل، نسخ، ومشاركة) رسائل المستخدم بسلاسة عبر قائمة منبثقة معزولة برمجياً لتجنب تعارضات الـ (Event Bubbling) والـ CSS Animations.
-
-نظام القراءة الآلية (TTS): زر ذكي ينطق بإجابة الطبيب بصوت واضح لسهولة الاستماع.
-
-تجربة بصرية مريحة (UI/UX): رسوم متحركة سلسة (Zipper & Cube-in)، دعم الوضعين الفاتح والمظلم، ومؤشر "CARE360 is thinking" أثناء المعالجة.
-
-🛡️ 3. الأمان المعماري (Security)
-عزل المفاتيح (Strict Gitignore): منع رفع أي ملفات حساسة تحتوي على مفاتيح (API Keys) مثل config.py إلى GitHub.
-
-فصل مسارات الكاش (Custom Cache Paths): توجيه نماذج الـ HuggingFace للقراءة من مسارات مخصصة لتجنب أخطاء امتلاء قرص النظام (C: Drive).
-
-💼 النموذج الربحي والأعمال (Business Model & Monetization)
-تم تصميم Care360 ليكون منصة أعمال (Startup) متكاملة، وليس مجرد نموذج ذكاء اصطناعي، وذلك من خلال:
-
-منصة حجز طبي متكاملة (Marketplace): شاشة مخصصة (Medical Services) تتيح للمريض تصفح أشهر معامل التحاليل، مراكز الأشعة، والعيادات، وحجز الخدمات مباشرة من داخل التطبيق.
-
-نموذج الخدمات البوابية (Concierge MVP): للبدء باختبار السوق بأقل تكلفة تشغيلية، يتم تحويل طلبات حجز المرضى مباشرة إلى (واتساب) خدمة عملاء المنصة، حيث يتم تأكيد الحجز يدوياً مع العيادات وتوجيه الدفع إلكترونياً.
-
-هامش الربح الديناميكي (Markup Commission): خوارزمية ذكية تقوم تلقائياً بقراءة السعر الأساسي للخدمة الطبية وإضافة عمولة التطبيق (APP_COMMISSION) وعرض السعر النهائي للمريض بصورة سلسة وشفافة.
-
-محاكاة العرض الاستثماري (Investor Pitch Simulation): تم تزويد الواجهة بنافذة محاكاة تفاعلية مُخصصة للمستثمرين ولجان التحكيم، تظهر فور الضغط على زر الحجز لتشرح "دورة رأس المال" وتوزيع الأرباح (نسبة المنصة ونسبة مزود الخدمة) لإثبات قوة وجاهزية النموذج التجاري.
-
-🚀 كيفية التشغيل (Getting Started)
-1. إعداد الخادم (Backend Setup)
-Bash
-# تثبيت الحزم المطلوبة
+### 2. Backend Setup
+```bash
+# Install Python dependencies
 pip install -r requirements.txt
 
-# افتح نافذة تيرمنال جديدة وانتقل لمجلد الواجهة
+# Run the FastAPI server
+uvicorn backend.api:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### 3. Frontend Setup
+```bash
 cd frontend
 
-# تثبيت الحزم (أول مرة فقط)
+# Install Node modules (first time only)
 npm install
 
-# تشغيل خادم التطوير
+# Run the Vite development server
 npm run dev
+```
 
-# تأكد من وجود ملفات قاعدة البيانات (chunks.pkl و my_rag.index) في مسار data/processed/
+---
+*Engineered with precision to unite the brilliance of human physicians with the power of artificial intelligence.*
 
-# تشغيل خادم FastAPI
-uvicorn backend.api:app --host 0.0.0.0 --port 8000 --reload
-
-تم تطوير هذا النظام بهندسة برمجية دقيقة ليجمع بين كفاءة الأطباء وذكاء الآلة.
-
-Developed by [CODEX Team]
-
+**Developed by [CODEX Team]**  
 { Abdelrahman_Elsayed / Sharl_Nabil / Abdelrahman_Hesham / Omar_Ehab / Saif_ELdeen }
