@@ -1,9 +1,9 @@
-# CARE360 Security Test Matrix
+# Nuvira Security Test Matrix
 # Production Readiness Checklist Before International Conference Deployment
 
 ## Executive Summary
 
-This document outlines the **32-point security test matrix** required for CARE360 authentication and data protection before deployment to the international conference. All tests must **PASS** before production deployment.
+This document outlines the **32-point security test matrix** required for Nuvira authentication and data protection before deployment to the international conference. All tests must **PASS** before production deployment.
 
 **Test Coverage Areas:**
 - Password Policy Enforcement
@@ -353,9 +353,9 @@ This document outlines the **32-point security test matrix** required for CARE36
 #### Test 7.4: CSRF Protection
 - **Requirement**: Cross-site requests are prevented
 - **Steps**:
-  1. Log into CARE360
+  1. Log into Nuvira
   2. Open another site in another tab
-  3. Try to perform CARE360 action from other site (fetch request)
+  3. Try to perform Nuvira action from other site (fetch request)
   4. Expected: Request blocked (CORS or CSRF token failure)
 - **Pass Criteria**: CORS prevents unauthorized cross-origin requests
 - **Status**: [ ] Pass [ ] Fail
@@ -491,9 +491,9 @@ This document outlines the **32-point security test matrix** required for CARE36
 - **Requirement**: All backend endpoints use HTTPS in production
 - **Steps**:
   1. Deploy backend to production
-  2. Try to access via HTTP: `http://api.care360.com/health`
+  2. Try to access via HTTP: `http://api.nuvira.com/health`
   3. Expected: 403/redirect to HTTPS or connection refused
-  4. Access via HTTPS: `https://api.care360.com/health`
+  4. Access via HTTPS: `https://api.nuvira.com/health`
   5. Expected: 200 OK
 - **Pass Criteria**: HTTPS enforced in production
 - **Status**: [ ] Pass [ ] Fail

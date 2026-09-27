@@ -71,7 +71,7 @@ function addMessage(text, type) {
     // لو الرسالة من الـ AI نترجمها لـ HTML، لو من المستخدم نعرضها زي ما هي
     const parsedText = type === "ai" ? marked.parse(text) : escapeHtml(text);
 
-    item.innerHTML = `<div class="msg-avatar">${type === "user" ? "●" : "✚"}</div><div class="msg-body"><b>${type === "user" ? "You" : "Care360 AI"}</b><div>${parsedText}</div></div>`;
+    item.innerHTML = `<div class="msg-avatar">${type === "user" ? "●" : "✚"}</div><div class="msg-body"><b>${type === "user" ? "You" : "Nuvira AI"}</b><div>${parsedText}</div></div>`;
     chatMessages.appendChild(item);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
@@ -97,7 +97,7 @@ async function sendChat(text) {
     const loadingDiv = document.createElement("div");
     loadingDiv.id = loadingId;
     loadingDiv.className = `chat-message ai`;
-    loadingDiv.innerHTML = `<div class="msg-avatar">✚</div><div class="msg-body"><b>Care360 AI</b><p>Retrieving evidence from WHO Guidelines...</p></div>`;
+    loadingDiv.innerHTML = `<div class="msg-avatar">✚</div><div class="msg-body"><b>Nuvira AI</b><p>Retrieving evidence from WHO Guidelines...</p></div>`;
     chatMessages.appendChild(loadingDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 

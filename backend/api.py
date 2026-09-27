@@ -26,7 +26,7 @@ def required_env(key: str) -> str:
         raise RuntimeError(f"CRITICAL ERROR: Mandatory environment secret {key} is missing. Application cannot start safely.")
     return val
 
-app = FastAPI(title="Care360 Clinical RAG API")
+app = FastAPI(title="Nuvira Clinical RAG API")
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -78,7 +78,7 @@ async def rate_limit_middleware(request: Request, call_next):
         # The middleware key is deliberately independent of client-supplied account headers.
         # Use per-route limits from RATE_LIMIT_CONFIG
         await enforce(scope, (ip, request.method, request.url.path))
-        if not request.cookies.get("care360_access_token") and not request.headers.get("authorization"):
+        if not request.cookies.get("nuvira_access_token") and not request.headers.get("authorization"):
             await enforce("anonymous", (ip, request.method, request.url.path))
     except HTTPException as error:
         return JSONResponse({"detail": error.detail}, status_code=error.status_code, headers=error.headers)
@@ -112,7 +112,7 @@ async def establish_session(request: SessionRequest):
 def set_session_cookies(response: Response, access_token: str, refresh_token: str):
     """Set HTTP-only cookies for the session."""
     response.set_cookie(
-        key="care360_access_token",
+        key="nuvira_access_token",
         value=access_token,
         httponly=True,
         secure=False,
@@ -121,7 +121,7 @@ def set_session_cookies(response: Response, access_token: str, refresh_token: st
         max_age=3600 # 1 hour
     )
     response.set_cookie(
-        key="care360_refresh_token",
+        key="nuvira_refresh_token",
         value=refresh_token,
         httponly=True,
         secure=False,
@@ -132,7 +132,7 @@ def set_session_cookies(response: Response, access_token: str, refresh_token: st
 
 @app.post("/api/auth/refresh")
 async def refresh_session(request: Request):
-    refresh_token = request.cookies.get("care360_refresh_token")
+    refresh_token = request.cookies.get("nuvira_refresh_token")
     if not refresh_token or not SUPABASE_URL or not SUPABASE_ANON_KEY:
         raise HTTPException(status_code=401, detail="Authentication required")
     try:
@@ -165,14 +165,14 @@ async def logout(response: Response):
 
 def clear_session_cookies(response: Response):
     response.delete_cookie(
-        key="care360_access_token",
+        key="nuvira_access_token",
         path="/",
         secure=False,
         httponly=True,
         samesite="lax"
     )
     response.delete_cookie(
-        key="care360_refresh_token",
+        key="nuvira_refresh_token",
         path="/",
         secure=False,
         httponly=True,

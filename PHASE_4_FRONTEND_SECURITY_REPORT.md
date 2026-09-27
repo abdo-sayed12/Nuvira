@@ -17,7 +17,7 @@
 - **Token Transport**: 
     - The frontend sends an `access_token` and `refresh_token` to the backend via `/api/auth/session`.
     - The backend then sets these as cookies on the response.
-    - Subsequent API requests rely on these cookies (verified by `rate_limit_middleware` checking `request.cookies.get("care360_access_token")`).
+    - Subsequent API requests rely on these cookies (verified by `rate_limit_middleware` checking `request.cookies.get("nuvira_access_token")`).
 - **Verdict**: **VERIFIED BY CODE** — The system uses HTTP-only cookies for session persistence, reducing the risk of token theft via XSS.
 
 ---
@@ -43,8 +43,8 @@
 ### 3.1 Storage Classification
 | Key | Value Type | Classification | Risk |
 | :--- | :--- | :--- | :--- |
-| `care360_lang` | String (ISO Code) | **SAFE** | None |
-| `care360_hide_disclaimer` | Boolean | **SAFE** | None |
+| `nuvira_lang` | String (ISO Code) | **SAFE** | None |
+| `nuvira_hide_disclaimer` | Boolean | **SAFE** | None |
 | `theme` | String ('light'/'dark') | **SAFE** | None |
 | `SESSIONS_STORAGE_KEY` | JSON (Conversation IDs) | **SENSITIVE** | Low (Authorized server-side) |
 

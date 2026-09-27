@@ -1,10 +1,10 @@
 Supabase_Auth_Setup_Guide.md
 
-# CARE360 — Supabase Authentication Setup Guide
+# Nuvira — Supabase Authentication Setup Guide
 
 ## Overview
 
-This guide walks through setting up production-ready Supabase authentication for CARE360, a medical AI platform requiring secure, HIPAA-aware authentication and session management.
+This guide walks through setting up production-ready Supabase authentication for Nuvira, a medical AI platform requiring secure, HIPAA-aware authentication and session management.
 
 ## Table of Contents
 
@@ -36,7 +36,7 @@ This guide walks through setting up production-ready Supabase authentication for
 
 1. Go to https://supabase.com/dashboard
 2. Click "New Project"
-3. Enter project name: `CARE360`
+3. Enter project name: `Nuvira`
 4. Set a strong database password
 5. Choose region (select closest to your target users)
 6. Click "Create New Project" and wait ~5 minutes
@@ -70,7 +70,7 @@ http://127.0.0.1:5173/reset-password
 
 1. Navigate to **Authentication** → **Email Templates**
 2. Review the confirmation and reset password templates
-3. Optionally customize them to match CARE360 branding
+3. Optionally customize them to match Nuvira branding
 4. Ensure templates redirect to the correct URLs (already configured above)
 
 ### Step 5: Get Your API Keys
@@ -261,7 +261,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # development
-        "https://care360.yourdomain.com",  # production
+        "https://nuvira.yourdomain.com",  # production
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
@@ -532,4 +532,4 @@ For issues:
 **End of Guide**
 
 Last updated: 2026-09-08
-CARE360 Team
+Nuvira Team

@@ -25,7 +25,7 @@ export interface ChatSession {
   conversationId?: string;
 }
 
-const SESSIONS_STORAGE_KEY = "care360_chat_sessions";
+const SESSIONS_STORAGE_KEY = "nuvira_chat_sessions";
 
 interface UseChatParams {
   initialPrompt?: string;

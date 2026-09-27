@@ -72,13 +72,13 @@ async def get_supabase_user(request: Request) -> UserIdentity:
         token = auth_header[7:]
     else:
         # Fallback to HTTP-only cookie
-        token = request.cookies.get("care360_access_token", "")
+        token = request.cookies.get("nuvira_access_token", "")
 
     if not token:
         if os.getenv("ENVIRONMENT", "development") == "development":
             return UserIdentity(
                 user_id="dev-fallback-user-1234",
-                email="dev@care360.local",
+                email="dev@nuvira.local",
                 email_verified=True
             )
         raise HTTPException(status_code=401, detail="Missing or invalid authorization token")
@@ -116,7 +116,7 @@ async def get_supabase_user(request: Request) -> UserIdentity:
         if os.getenv("ENVIRONMENT", "development") == "development":
             return UserIdentity(
                 user_id="dev-fallback-user-1234",
-                email="dev@care360.local",
+                email="dev@nuvira.local",
                 email_verified=True
             )
         

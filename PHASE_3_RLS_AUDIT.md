@@ -12,7 +12,7 @@ Use this checklist to verify RLS implementation in your Supabase project.
 
 ### Access Your Supabase Dashboard
 1. Go to https://app.supabase.com
-2. Select your CARE360 project
+2. Select your Nuvira project
 3. Navigate to: **SQL Editor** or **Table Editor**
 
 ---

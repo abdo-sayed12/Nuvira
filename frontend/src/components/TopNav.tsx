@@ -75,14 +75,14 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
   
   // 🚀 قراءة اللغة المحفوظة مسبقاً أو ضبط الإنجليزية كافتراضي
   const [currentLang, setCurrentLang] = useState(() => {
-    return localStorage.getItem("care360_lang") || document.documentElement.lang || "en";
+    return localStorage.getItem("nuvira_lang") || document.documentElement.lang || "en";
   });
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // تطبيق اللغة واتجاه الصفحة فور تحميل المكون لأول مرة
   useEffect(() => {
-    const savedLang = localStorage.getItem("care360_lang") || "en";
+    const savedLang = localStorage.getItem("nuvira_lang") || "en";
     setCurrentLang(savedLang);
     document.documentElement.lang = savedLang;
     document.documentElement.dir = savedLang === "ar" ? "rtl" : "ltr";
@@ -104,7 +104,7 @@ export function TopNav({ page, setPage }: { page: Page; setPage: (page: Page) =>
     setLangMenuOpen(false);
     
     // 🚀 حفظ الاختيار في الذاكرة المحلية للأبد
-    localStorage.setItem("care360_lang", code);
+    localStorage.setItem("nuvira_lang", code);
     
     // تحديث اتجاه ولغة المستند لتعمل في كل الصفحات والصوت تلقائياً
     document.documentElement.dir = code === "ar" ? "rtl" : "ltr";

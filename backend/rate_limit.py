@@ -54,7 +54,7 @@ def account_dimension(request: Request) -> str:
         return request.state.user.user_id
     
     # Fallback to cookie if user state isn't set yet
-    token = request.cookies.get("care360_access_token")
+    token = request.cookies.get("nuvira_access_token")
     if token:
         # We don't decode here to avoid redundant JWT overhead in the limiter
         # We use the token hash as a proxy for the account ID

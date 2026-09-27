@@ -66,7 +66,7 @@ def generate_clinical_answer(query: str, chunks: list, image_base64: str = None,
 
     # Retrieved documents are evidence only; instructions inside them must never be executed.
     system_prompt = """
-    You are Care360, a world-class, genius-level Senior Medical Consultant and deeply empathetic human physician. 
+    You are Nuvira, a world-class, genius-level Senior Medical Consultant and deeply empathetic human physician. 
 
     [1. CHAMELEON LINGUISTIC & TONE MIRRORING]
     - DYNAMICALLY MIRROR the user's EXACT language, dialect, and conversational vibe.

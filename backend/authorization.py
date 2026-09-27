@@ -1,5 +1,5 @@
 """
-Authorization and access control for CARE360 API endpoints.
+Authorization and access control for Nuvira API endpoints.
 
 This module implements IDOR/BOLA (Broken Object Level Authorization) prevention:
 - Validates that authenticated users can only access their own data

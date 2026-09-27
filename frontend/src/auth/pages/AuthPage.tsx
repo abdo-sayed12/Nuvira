@@ -20,7 +20,7 @@ const arabic: Copy = {
 };
 
 function useCopy() {
-  const lang = localStorage.getItem("care360_lang") || "en";
+  const lang = localStorage.getItem("nuvira_lang") || "en";
   return lang === "ar" ? arabic : english;
 }
 
@@ -129,7 +129,7 @@ function Field({ label, value, onChange, ...props }: { label: string; value: str
 }
 
 function PasswordField({ label, value, onChange, show, setShow, ...props }: { label: string; value: string; onChange: (value: string) => void; show: boolean; setShow: (value: boolean) => void } & Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type">) {
-  const lang = localStorage.getItem("care360_lang") || "en";
+  const lang = localStorage.getItem("nuvira_lang") || "en";
   const accessibleLabel = show ? (lang === "ar" ? "إخفاء كلمة المرور" : "Hide password") : (lang === "ar" ? "إظهار كلمة المرور" : "Show password");
   return <label className="block text-sm font-semibold text-slate-200">{label}<span className="relative mt-2 block"><input {...props} type={show ? "text" : "password"} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3.5 pr-12 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-teal-400 focus:ring-4 focus:ring-teal-400/10" /><button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:text-teal-300" aria-label={accessibleLabel}>{show ? <EyeOff size={18} /> : <Eye size={18} />}</button></span></label>;
 }

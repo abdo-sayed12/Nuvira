@@ -5,7 +5,7 @@
 
 ---
 
-**Nuvira** (formerly Care360) is an elite, fully-integrated, and highly secure AI medical ecosystem. Acting as a "World-Class Medical Consultant," Nuvira is built on robust healthcare protocols (like WHO guidelines). It analyzes medical imaging, provides pinpoint accurate home-care guidance, and diagnoses complex cases—all while maintaining the warm, deeply empathetic, and natural tone of a senior human physician.
+**Nuvira** (formerly Nuvira) is an elite, fully-integrated, and highly secure AI medical ecosystem. Acting as a "World-Class Medical Consultant," Nuvira is built on robust healthcare protocols (like WHO guidelines). It analyzes medical imaging, provides pinpoint accurate home-care guidance, and diagnoses complex cases—all while maintaining the warm, deeply empathetic, and natural tone of a senior human physician.
 
 ## 🏗️ Architecture & Tech Stack
 
@@ -81,7 +81,11 @@ npm run dev
 ```
 
 ---
+### 👨‍💻 Developed By
+
+**Abdelrahman Sayed Mohamed**  
+*Full-Stack AI Engineer & Software Architect*
+
 *Engineered with precision to unite the brilliance of human physicians with the power of artificial intelligence.*
 
-**Developed by [CODEX Team]**  
-{ Abdelrahman_Elsayed / Sharl_Nabil / Abdelrahman_Hesham / Omar_Ehab / Saif_ELdeen }
+Nuvira is a solo-developed ecosystem, architected from the ground up to revolutionize digital healthcare through cutting-edge Generative AI, robust security, and deeply empathetic user experiences.

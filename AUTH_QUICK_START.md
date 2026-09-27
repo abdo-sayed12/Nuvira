@@ -1,4 +1,4 @@
-# CARE360 Authentication — Quick Start Checklist
+# Nuvira Authentication — Quick Start Checklist
 
 ## ✅ What's Been Done
 

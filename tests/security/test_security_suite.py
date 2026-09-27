@@ -1,5 +1,5 @@
 """
-Security test suite for CARE360 - Rate Limiting Tests
+Security test suite for Nuvira - Rate Limiting Tests
 These tests use mocked dependencies to avoid loading heavy AI models.
 """
 

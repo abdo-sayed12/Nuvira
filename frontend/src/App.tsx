@@ -26,13 +26,13 @@ function AppContent() {
   
   // 🌍 إدارة اللغة بشكل مركزي وعالمي للأبد (منع فقدانها عند الـ Refresh)
   const [lang, setLang] = useState<string>(() => {
-    const saved = localStorage.getItem("care360_lang");
+    const saved = localStorage.getItem("nuvira_lang");
     return saved || "en";
   });
 
   // تحديث اللغة والاتجاه في جذر المستند وتخزينها فوراً عند أي تغير
   useEffect(() => {
-    localStorage.setItem("care360_lang", lang);
+    localStorage.setItem("nuvira_lang", lang);
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
   }, [lang]);
@@ -44,7 +44,7 @@ function AppContent() {
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem("care360_hide_disclaimer")) {
+    if (!localStorage.getItem("nuvira_hide_disclaimer")) {
       const timer = setTimeout(() => setShowDisclaimer(true), 500);
       return () => clearTimeout(timer);
     }
@@ -52,7 +52,7 @@ function AppContent() {
 
   const handleAcceptDisclaimer = () => {
     if (dontShowAgain) {
-      localStorage.setItem("care360_hide_disclaimer", "true");
+      localStorage.setItem("nuvira_hide_disclaimer", "true");
     }
     setShowDisclaimer(false);
   };
