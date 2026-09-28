@@ -151,10 +151,10 @@ function StreamingMessageBody({
         // Smooth scroll if near bottom
         const scroller = document.getElementById('messages-container');
         if (scroller) {
-           const isNearBottom = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 250;
-           if (isNearBottom) {
-              scroller.scrollTop = scroller.scrollHeight;
-           }
+          const isNearBottom = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 250;
+          if (isNearBottom) {
+            scroller.scrollTop = scroller.scrollHeight;
+          }
         }
       }
     }, 20);
@@ -226,11 +226,10 @@ export function MessageBubble({
 
   return (
     <div
-      className={`group animate-zipper flex flex-col ${
-        message.role === "user"
+      className={`group animate-zipper flex flex-col ${message.role === "user"
           ? "ml-auto rtl:mr-auto rtl:ml-0 items-end max-w-2xl"
           : "w-full max-w-none items-start"
-      }`}
+        }`}
     >
       <div
         dir={isArabic(message.body) ? "rtl" : "ltr"}
@@ -400,11 +399,10 @@ export function MessageBubble({
 
           <button
             onClick={() => void toggleSpeech(message.id, message.body)}
-            className={`rounded-xl p-1.5 transition ${
-              speakingId === message.id
+            className={`rounded-xl p-1.5 transition ${speakingId === message.id
                 ? "text-red-500 bg-red-50 dark:bg-red-900/20"
                 : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-teal-600 dark:hover:text-teal-400"
-            }`}
+              }`}
             title={speakingId === message.id ? "Stop Reading" : "Read aloud"}
           >
             {speakingId === message.id ? (
@@ -436,11 +434,10 @@ export function MessageBubble({
 
           <button
             onClick={() => void handleFeedback(message.id, "up")}
-            className={`rounded-xl p-1.5 transition ${
-              feedbacks[message.id] === "up"
+            className={`rounded-xl p-1.5 transition ${feedbacks[message.id] === "up"
                 ? "text-teal-600 bg-teal-50 dark:bg-teal-900/30"
                 : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-teal-600 dark:hover:text-teal-400"
-            }`}
+              }`}
             title="Helpful"
           >
             <ThumbsUp
@@ -453,11 +450,10 @@ export function MessageBubble({
 
           <button
             onClick={() => void handleFeedback(message.id, "down")}
-            className={`rounded-xl p-1.5 transition ${
-              feedbacks[message.id] === "down"
+            className={`rounded-xl p-1.5 transition ${feedbacks[message.id] === "down"
                 ? "text-red-600 bg-red-50 dark:bg-red-900/30"
                 : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-600 dark:hover:text-red-400"
-            }`}
+              }`}
             title="Not helpful"
           >
             <ThumbsDown
