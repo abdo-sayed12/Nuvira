@@ -1,14 +1,5 @@
-import gradio as gr
-import spaces
-import torch
+import uvicorn
+from backend.api import app
 
-zero = torch.Tensor([0]).cuda()
-print(zero.device) # <-- 'cpu' 🤔
-
-@spaces.GPU
-def greet(n):
-    print(zero.device) # <-- 'cuda:0' 🤗
-    return f"Hello {zero + n} Tensor"
-
-demo = gr.Interface(fn=greet, inputs=gr.Number(), outputs=gr.Text())
-demo.launch()
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=7860)
