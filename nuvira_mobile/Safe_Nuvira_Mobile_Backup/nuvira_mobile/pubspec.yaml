@@ -1,0 +1,31 @@
+﻿name: nuvira_mobile
+description: Nuvira - Health Information Intelligence
+publish_to: 'none'
+version: 1.0.0+1
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.2.2
+  shared_preferences: ^2.2.3
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.0.2
+  file_picker: ^8.0.3
+  image_picker: ^1.1.2
+  flutter_svg: ^2.0.10
+  google_fonts: ^6.2.1
+  flutter_markdown: ^0.7.2
+  url_launcher: ^6.2.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
